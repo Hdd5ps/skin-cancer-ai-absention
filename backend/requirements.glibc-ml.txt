@@ -1,0 +1,9 @@
+# Install this file after backend/requirements.txt on Ubuntu/Debian (glibc)
+# to enable full model inference.
+
+torch==2.6.0; python_version >= "3.12"
+torchvision==0.21.0; python_version >= "3.12"
+
+# Backward-compatible pins for older Python versions.
+torch==2.3.1; python_version < "3.12"
+torchvision==0.18.1; python_version < "3.12"

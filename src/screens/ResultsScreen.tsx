@@ -1,0 +1,247 @@
+import { useState } from 'react'
+import type { Screen, PredictResponse } from '../App'
+
+interface Props {
+  navigate: (s: Screen, result?: PredictResponse) => void
+  result: PredictResponse | null
+}
+
+// Demo presets — cycle with the tab switcher when no live result
+const PRESETS: PredictResponse[] = [
+  {
+    gate: 0, status: 'success', blur_variance: 412.89, confidence: 0.942,
+    label: 'Benign Nevus', icd10: 'D22.9',
+    model_metadata: { architecture: 'MobileNetV2', temperature: 1.1672, validation_auc: 0.8884, calibration_ece: 0.0730, blur_threshold: 100, confidence_threshold: 0.80 },
+  },
+  {
+    gate: 0, status: 'success', blur_variance: 389.12, confidence: 0.876,
+    label: 'Melanoma', icd10: 'C43.9',
+    model_metadata: { architecture: 'MobileNetV2', temperature: 1.1672, validation_auc: 0.8884, calibration_ece: 0.0730, blur_threshold: 100, confidence_threshold: 0.80 },
+  },
+  {
+    gate: 0, status: 'success', blur_variance: 401.33, confidence: 0.913,
+    label: 'Basal Cell Carcinoma', icd10: 'C44.91',
+    model_metadata: { architecture: 'MobileNetV2', temperature: 1.1672, validation_auc: 0.8884, calibration_ece: 0.0730, blur_threshold: 100, confidence_threshold: 0.80 },
+  },
+]
+
+const STYLE: Record<string, { color: string; bg: string; border: string; abcde: number[] }> = {
+  'Benign Nevus':           { color: '#059669', bg: '#ecfdf5', border: '#6ee7b7', abcde: [1,1,2,2,1] },
+  'Melanoma':               { color: '#dc2626', bg: '#fef2f2', border: '#fca5a5', abcde: [4,4,5,4,5] },
+  'Basal Cell Carcinoma':   { color: '#d97706', bg: '#fffbeb', border: '#fcd34d', abcde: [3,3,2,3,3] },
+}
+
+function arcPath(pct: number, r = 46, cx = 58, cy = 58) {
+  const start = -Math.PI / 2
+  const end = start + (pct / 100) * 2 * Math.PI
+  const x1 = cx + r * Math.cos(start), y1 = cy + r * Math.sin(start)
+  const x2 = cx + r * Math.cos(end),   y2 = cy + r * Math.sin(end)
+  return `M ${x1} ${y1} A ${r} ${r} 0 ${pct > 50 ? 1 : 0} 1 ${x2} ${y2}`
+}
+
+export default function ResultsScreen({ navigate, result }: Props) {
+  const [presetIdx, setPresetIdx] = useState(0)
+
+  // Use live result if available, otherwise use preset
+  const data = result?.status === 'success' ? result : PRESETS[presetIdx]
+  const label = data.label ?? 'Benign Nevus'
+  const confPct = Math.round((data.confidence ?? 0.942) * 100)
+  const style = STYLE[label] ?? STYLE['Benign Nevus']
+  const isMalignant = label !== 'Benign Nevus'
+
+  return (
+    <div className="flex flex-col h-full font-body" style={{ background: '#f8fafc' }}>
+      <div className="h-14" />
+
+      <div className="flex items-center justify-between px-6 py-3">
+        <button
+          onClick={() => navigate('camera')}
+          className="rounded-full flex items-center justify-center"
+          style={{ width: 48, height: 48, minWidth: 48, minHeight: 48, background: '#f1f5f9' }}
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M11 4L6 9l5 5" stroke="#334155" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <div className="flex flex-col items-center">
+          <span className="font-mono text-[11px] tracking-widest uppercase text-ink-500">AI Results</span>
+          <span className="font-mono text-[9px] text-ink-400">Gate 1 ✓ · Gate 2 ✓</span>
+        </div>
+        <button
+          className="rounded-full flex items-center justify-center"
+          style={{ width: 48, height: 48, minWidth: 48, minHeight: 48, background: '#f1f5f9' }}
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <circle cx="9" cy="4" r="1.5" fill="#334155"/>
+            <circle cx="9" cy="9" r="1.5" fill="#334155"/>
+            <circle cx="9" cy="14" r="1.5" fill="#334155"/>
+          </svg>
+        </button>
+      </div>
+
+      {/* Demo preset switcher (only show if no live result) */}
+      {!result && (
+        <div className="flex gap-1.5 px-6 pb-1">
+          {PRESETS.map((p, i) => (
+            <button
+              key={i}
+              onClick={() => setPresetIdx(i)}
+              className="flex-1 py-1.5 rounded-lg font-mono text-[9px] font-medium tracking-wider uppercase transition-all"
+              style={{ background: presetIdx === i ? STYLE[p.label!].color : '#e2e8f0', color: presetIdx === i ? 'white' : '#64748b', minHeight: 28 }}
+            >
+              {i === 0 ? 'Benign' : i === 1 ? 'Melanoma' : 'BCC'}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Main result card */}
+      <div className="mx-6 mt-2 rounded-3xl overflow-hidden" style={{ background: 'white', border: '1.5px solid #e2e8f0', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
+        {/* Lesion image */}
+        <div className="relative" style={{ height: 130 }}>
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, #d4a574 10%, #c49a6c 40%, #8B6914 60%, #b8865a 100%)' }}/>
+          <svg className="absolute inset-0" width="100%" height="100%" viewBox="0 0 340 130" preserveAspectRatio="xMidYMid slice">
+            <ellipse cx="170" cy="65" rx="45" ry="42" fill="#7a4010" fillOpacity="0.5"/>
+            <ellipse cx="185" cy="56" rx="25" ry="22" fill="#4a2008" fillOpacity="0.45"/>
+            <ellipse cx="160" cy="72" rx="15" ry="14" fill="#6b3010" fillOpacity="0.35"/>
+          </svg>
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.35) 0%, transparent 50%, rgba(0,0,0,0.25) 100%)' }}/>
+          {/* Measurement overlay */}
+          <svg className="absolute inset-0 pointer-events-none" width="100%" height="100%" viewBox="0 0 340 130">
+            <rect x="125" y="18" width="90" height="84" rx="4" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1" strokeDasharray="3 2"/>
+            <line x1="125" y1="14" x2="215" y2="14" stroke="rgba(255,255,255,0.5)" strokeWidth="1"/>
+            <text x="170" y="10" fill="rgba(255,255,255,0.6)" fontSize="7" fontFamily="monospace" textAnchor="middle">14.2 mm</text>
+            <line x1="220" y1="18" x2="220" y2="102" stroke="rgba(255,255,255,0.5)" strokeWidth="1"/>
+            <text x="228" y="64" fill="rgba(255,255,255,0.6)" fontSize="7" fontFamily="monospace">11.1</text>
+          </svg>
+          {/* Scan timestamp */}
+          <div className="absolute top-3 left-3 px-2 py-1 rounded-lg font-mono text-[9px] text-white" style={{ background: 'rgba(0,0,0,0.5)' }}>
+            Aug 13, 2026 · 09:41
+          </div>
+          {/* Prediction badge */}
+          <div
+            className="absolute bottom-3 right-3 px-3 py-1.5 rounded-xl font-mono text-[10px] font-bold tracking-wider uppercase flex items-center gap-1.5"
+            style={{ background: style.color, color: 'white', boxShadow: `0 4px 12px ${style.color}55` }}
+          >
+            {!isMalignant
+              ? <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              : <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1.5L8.5 7.5H1.5L5 1.5z" stroke="white" strokeWidth="1.2" strokeLinejoin="round"/></svg>
+            }
+            {label}
+          </div>
+          {/* Blur variance OK */}
+          <div className="absolute top-3 right-3 px-2 py-1 rounded-lg font-mono text-[9px]" style={{ background: 'rgba(5,150,105,0.85)', color: 'white' }}>
+            σ² = {data.blur_variance.toFixed(0)} ✓
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="px-5 pt-4 pb-3">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h2 className="font-display font-bold text-[19px] text-ink-900 leading-tight" style={{ letterSpacing: '-0.02em' }}>{label}</h2>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="font-mono text-[11px] font-medium px-2 py-0.5 rounded" style={{ background: style.bg, color: style.color, border: `1px solid ${style.border}` }}>
+                  ICD-10: {data.icd10}
+                </span>
+                <span className="font-mono text-[11px] font-medium px-2 py-0.5 rounded" style={{ background: '#eff6ff', color: '#1d56a8', border: '1px solid #bfdbfe' }}>
+                  {confPct}% Confident
+                </span>
+              </div>
+            </div>
+            {/* Confidence donut */}
+            <div className="shrink-0 relative" style={{ width: 72, height: 72 }}>
+              <svg width="116" height="116" viewBox="0 0 116 116" style={{ position: 'absolute', top: -22, left: -22 }}>
+                <circle cx="58" cy="58" r="46" fill="none" stroke="#e2e8f0" strokeWidth="7"/>
+                <path d={arcPath(confPct)} fill="none" stroke={style.color} strokeWidth="7" strokeLinecap="round"/>
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="font-mono font-bold text-[13px] text-ink-900">{confPct}%</span>
+                <span className="font-mono text-[7px] text-ink-400 leading-none">CONF.</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ABCDE */}
+          <div className="mt-3 pt-3" style={{ borderTop: '1px solid #f1f5f9' }}>
+            <p className="font-mono text-[9px] tracking-widest uppercase text-ink-400 mb-2">ABCDE Feature Analysis</p>
+            <div className="grid grid-cols-5 gap-1">
+              {['A','B','C','D','E'].map((letter, i) => {
+                const labels = ['Asymmetry','Border','Color','Diameter','Evolution']
+                const score = style.abcde[i]
+                return (
+                  <div key={letter} className="flex flex-col items-center gap-1">
+                    <div
+                      className="w-8 h-8 rounded-xl flex items-center justify-center font-display font-bold text-[13px]"
+                      style={{ background: score >= 4 ? '#fef2f2' : score >= 3 ? '#fffbeb' : '#ecfdf5', color: score >= 4 ? '#dc2626' : score >= 3 ? '#d97706' : '#059669' }}
+                    >
+                      {letter}
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      {[1,2,3,4,5].map(n => (
+                        <div key={n} className="w-6 h-0.5 rounded-full" style={{ background: n <= score ? style.color : '#e2e8f0' }}/>
+                      ))}
+                    </div>
+                    <span className="font-mono text-[7px] text-ink-400 text-center leading-tight">{labels[i]}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Model validation metrics */}
+      <div className="mx-6 mt-3 px-4 py-3 rounded-2xl" style={{ background: 'white', border: '1px solid #e2e8f0' }}>
+        <p className="font-mono text-[9px] tracking-widest uppercase text-ink-400 mb-2">Model Validation Metrics</p>
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { label: 'Architecture', value: data.model_metadata.architecture },
+            { label: 'Val AUC', value: data.model_metadata.validation_auc.toFixed(4) },
+            { label: 'Calib. ECE', value: data.model_metadata.calibration_ece.toFixed(4) },
+            { label: 'Temperature', value: `T=${data.model_metadata.temperature}` },
+          ].map(({ label, value }) => (
+            <div key={label} className="flex flex-col gap-0.5">
+              <span className="font-mono text-[8px] text-ink-400 leading-none">{label}</span>
+              <span className="font-mono text-[10px] font-medium text-ink-700">{value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Disclaimer */}
+      <div className="mx-6 mt-3 px-4 py-3 rounded-2xl flex gap-3 items-start" style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0 mt-0.5">
+          <circle cx="8" cy="8" r="6.5" stroke="#1d56a8" strokeWidth="1.2"/>
+          <path d="M8 5v.5M8 7.5v4" stroke="#1d56a8" strokeWidth="1.2" strokeLinecap="round"/>
+        </svg>
+        <p className="text-[11px] text-med-blue-800 leading-snug font-medium">
+          This AI result is not a medical diagnosis. Professional dermatological evaluation is strongly recommended before any clinical decision.
+        </p>
+      </div>
+
+      <div className="flex-1"/>
+
+      <div className="px-6 pb-20 flex flex-col gap-2.5">
+        <button
+          className="w-full py-4 rounded-2xl font-display font-bold text-white text-[17px] transition-all active:scale-[0.98]"
+          style={{
+            background: isMalignant ? 'linear-gradient(135deg, #991b1b 0%, #dc2626 100%)' : 'linear-gradient(135deg, #1d56a8 0%, #2563c8 100%)',
+            boxShadow: `0 8px 24px ${style.color}40`,
+            letterSpacing: '-0.01em',
+            minHeight: 56,
+          }}
+        >
+          {isMalignant ? 'Book Dermatologist Now' : 'Save & Continue Monitoring'}
+        </button>
+        <button
+          onClick={() => navigate('home')}
+          className="w-full rounded-2xl font-display font-semibold text-ink-600 text-[15px] transition-all active:scale-[0.98]"
+          style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', minHeight: 52 }}
+        >
+          New Scan
+        </button>
+      </div>
+    </div>
+  )
+}

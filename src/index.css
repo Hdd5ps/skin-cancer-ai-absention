@@ -1,0 +1,58 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --font-display: 'Outfit', sans-serif;
+  --font-body: 'Source Sans 3', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+
+  --color-med-blue-950: #0a1f3d;
+  --color-med-blue-900: #0f2d5a;
+  --color-med-blue-800: #1a4080;
+  --color-med-blue-700: #1d56a8;
+  --color-med-blue-600: #2563c8;
+  --color-med-blue-500: #3b7de8;
+  --color-med-blue-400: #6ba3f0;
+  --color-med-blue-200: #bfdbfe;
+  --color-med-blue-100: #dbeafe;
+  --color-med-blue-50: #eff6ff;
+
+  --color-clinical-white: #f8fafc;
+  --color-surface: #ffffff;
+
+  --color-warning-amber: #d97706;
+  --color-warning-bg: #fffbeb;
+  --color-warning-border: #fcd34d;
+
+  --color-success-green: #059669;
+  --color-success-bg: #ecfdf5;
+
+  --color-danger-red: #dc2626;
+  --color-danger-bg: #fef2f2;
+
+  --color-ink-900: #0f172a;
+  --color-ink-700: #334155;
+  --color-ink-500: #64748b;
+  --color-ink-300: #cbd5e1;
+  --color-ink-100: #f1f5f9;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  background: #e2e8f0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar { width: 0; background: transparent; }
+
+.font-display { font-family: var(--font-display); }
+.font-body    { font-family: var(--font-body); }
+.font-mono    { font-family: var(--font-mono); }

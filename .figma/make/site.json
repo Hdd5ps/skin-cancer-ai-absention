@@ -1,0 +1,10 @@
+{
+  "description": "This AI-assisted skin cancer screening tool enables users to capture and assess skin lesions, providing clear results and recommendations for professional evaluation.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

@@ -1,0 +1,78 @@
+Act as a Principal Full-Stack Software Engineer, Medical UI/UX Specialist, and Software Quality Architect. 
+
+### 1. PROJECT CONTEXT
+We are building a production-ready mobile skin cancer screening application (React Native/Expo frontend + FastAPI backend). 
+We have completed the model training phase using PyTorch [1]. The core asset is a calibrated MobileNetV2 model (`mobilenetv2_calibrated.pth`) trained on 26,000+ ISIC lesion images [1, 7]. The training utilized nn.BCEWithLogitsLoss with a dynamic positive class weight of 58.16 to handle a severe (<2%) class imbalance [7, 8]. It achieved a validation AUC of 0.8884 and was calibrated using Temperature Scaling (T = 1.1672) to reduce the Expected Calibration Error (ECE) to 0.0730, ensuring reliable probability confidence scores [7].
+
+### 2. CORE ARCHITECTURAL SYSTEM DESIGN
+The application must adhere strictly to the Model-View-Controller (MVC) pattern and the principle of Functional Independence [4, 5]. Ensure High Functional Cohesion and Low Coupling by decoupling presentation layers from the underlying business logic [4, 9]:
+- **Frontend (View/Controller):** Built with React Native, Expo, and Tailwind CSS (NativeWind) for portability [9].
+- **Backend API (Model/Controller):** Built with FastAPI and Uvicorn [1].
+- **Dual-Gated Pipeline (Business Logic):** Implement the decision flow sequentially:
+  - **Gate 1 (Blurriness Filter):** Use OpenCV's Laplacian variance method to calculate image sharpness [1]. If the variance falls below a set threshold, immediately trigger an error state [10].
+  - **Gate 2 (Confidence/Uncertainty Abstention):** Run confident images through the MobileNetV2 model, apply Temperature Scaling (T = 1.1672), and compute the probability [1, 7]. If the model's confidence is too low, abstain from returning a predicted label and trigger a clinical recommendation [10].
+
+### 3. MOBILE UI/UX CONSTRAINTS
+Design the React Native frontend screens incorporating the following "Design for Mobility" best practices [5]:
+- **Simplicity & Progressive Disclosure:** Keep the main screens uncluttered [11]. Use bottom-sheet modal drawers for detailed parameters and instructions [11].
+- **Large Touch Targets:** All interactive elements (capture button, navigation options) must be a minimum of 48x48dp to ensure precision and prevent mis-taps [11, 12].
+- **Reduced Steps:** A first-time user must be able to navigate from onboarding to lesion capture in ≤ 3 interactions [12, 13].
+- **Connectivity & Offline Handling:** Implement local client-side caching of screening history using AsyncStorage [11].
+
+Generate code for these 5 specific screens [10, 14]:
+1. **Home/Onboarding Screen:** Welcome message, a prominent "Scan Lesion" primary button, and an immutable, highly visible medical disclaimer stating that this is a screening tool, not a diagnostic device [10].
+2. **Camera Capture Screen:** Viewfinder interface with a targeting overlay, standard capture button, and a visual instruction tooltip: "Ensure bright lighting and clear focus" [10].
+3. **Blur Error Screen (Gate 1 Failure):** Triggered when OpenCV flags a blurry image [1]. Show the captured image with a blur overlay, warning text: "Image quality is too low. Please retake photo with steady lighting," and a prominent "Retake Photo" button [10].
+4. **Uncertainty Abstention Screen (Gate 2 Failure):** Triggered when model confidence is low [10]. Show a yellow warning banner: "Model confidence is low. Clinical evaluation required." Do not display any prediction or badge. Provide a primary button: "Consult Dermatologist" [10].
+5. **Results Screen (Success):** Display the cropped lesion image, a clear risk prediction badge, the calibrated confidence percentage (e.g., "94% Confident"), and a standard medical disclaimer advising professional follow-up [10].
+
+### 4. SECURITY & SECURE-BY-DESIGN CONTROLS
+Security must be a core architectural constraint [4]:
+- **Input Sanitization:** Treat the incoming image file, image metadata, and request payloads as untrusted [4, 15]. Sanitize and validate all API payloads before execution to prevent malicious injection attacks [4, 15].
+- **Privacy & Cryptographic Controls:** Enforce strict data confidentiality and integrity [4]. Sensitive screening history or temporary user session tokens must be stored locally using secure, encrypted storage [4].
+
+### 5. IMPLEMENTATION TASKS
+Please generate:
+1. **`app.py` (FastAPI backend):** Load the `mobilenetv2_calibrated.pth` model [1]. Write the endpoint `/predict` which accepts an image, runs the OpenCV Laplacian blur check (Gate 1), runs the PyTorch inference with logit temperature scaling (Gate 2), and returns JSON outputs [1].
+2. **React Native/Expo Components:** Provide the implementation files for the 5 UI screens, structured for NativeWind Tailwind CSS, with large touch targets and progressive disclosure [10, 11, 14].
+3. **Automated Verification Tests:** Write automated PyTest unit tests for the backend to verify the Gate 1 blur threshold and Gate 2 confidence threshold behavior, ensuring our continuous integration testing is robust [6, 16].
+1. Assignment Checklist
+Before submitting your mobile design extension and quality framework deliverables, make sure your finalized group documentation contains:
+[ ] System Boundaries & Disclaimers: Did you clearly document that the system is a screening tool and not a diagnostic device, including prominent disclaimers on the Home and Results screens
+?
+[ ] The Dual-Gated Pipeline Architecture: Is your backend design clearly mapped to two distinct gates (Gate 1: OpenCV blur check; Gate 2: temperature-scaled model inference)
+?
+[ ] Validation Metrics: Did you include your model's mathematical validation metrics in your report (ECE=0.0730 and peak validation AUC=0.8884) to prove empirical software quality
+?
+[ ] Mobile Principles & Constraints: Did you explicitly detail the touch targets (minimum 48×48dp), progressive disclosure screen layouts, and offline client-side caching solutions
+?
+2. Examples
+Separation of Concerns (NFR-08): In our application, we split code strictly into folders: /backend/app.py handles the math, PyTorch predictions, and OpenCV blur checks (business logic)
+, while /frontend/screens/ focuses entirely on compiling the UI elements (presentation logic)
+. This prevents the UI files from becoming highly coupled with backend libraries
+.
+Gate 2 Uncertainty Abstention Scenario: When a user uploads a poorly lit photo that passes the blur check, the calibrated PyTorch model outputs a low confidence level
+. Rather than showing an inaccurate guess, the system gracefully executes Gate 2's fallback, hiding the prediction and instructing the user to consult a dermatologist immediately
+.
+3. Practice Questions
+What is the core difference between Software Quality Assurance (SQA) and Testing in this project?
+Answer: Software Testing is a reactive quality control activity where we execute test cases on our FastAPI endpoints to find defects
+. SQA is a proactive umbrella activity where we audit the entire process—enforcing coding standards, checking requirements traceability, and verifying that our automated CI pipeline runs on every code change to prevent errors
+.
+Why is Temperature Scaling (T=1.1672) considered a critical secure-by-design feature for a medical screening app?
+Answer: Uncalibrated deep learning models are notoriously overconfident
+. Applying temperature scaling calibrates raw model logits so that confidence matches real-world accuracy
+. This lets us confidently set an uncertainty threshold (Gate 2), preventing the app from displaying a highly confident yet completely incorrect cancer prediction to a patient
+.
+4. Common Mistakes
+Relying on the UI for Security: A classic software engineering mistake is checking for blurred images or evaluating prediction confidence only on the mobile device frontend. You must enforce these validations on the server side (FastAPI backend) because the client-side UI is not a secure, reliable boundary
+.
+Ignoring Class Imbalance: Do not treat your dataset as symmetric. Skin cancer databases are heavily imbalanced (frequently <2% malignant)
+. Failing to use techniques like weighted binary cross-entropy (w 
+p
+​
+ =58.16) will result in a model that simply guesses "benign" every time
+.
+Omitting the Disclaimer: Leaving out highly visible medical disclaimers on your onboarding and results screens introduces a major project liability risk
+. The SRS must state that the app is strictly for preliminary screening, not professional medical diagnosis
+.

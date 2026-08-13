@@ -1,0 +1,5 @@
+# OpenCV dependency for environments that provide compatible wheels.
+# On Alpine/musl, prefer system package install (e.g., apk add py3-opencv)
+# or run in health-only mode.
+
+opencv-python-headless==4.10.0.84
