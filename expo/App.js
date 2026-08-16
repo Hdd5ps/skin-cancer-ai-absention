@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 
-const API_URL = "http://127.0.0.1:8000/predict";
+const API_URL = "https://special-palm-tree-69r6q9ppxqjvh4p79-8000.app.github.dev/predict";
 
 function StatusCard({ title, subtitle, tone = "neutral", children }) {
   const toneStyle = useMemo(() => {

@@ -1,44 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { Screen, PredictResponse } from '../App'
 
 interface Props { navigate: (s: Screen, result?: PredictResponse) => void }
 
 type UploadState = 'idle' | 'uploading' | 'done'
 
-// Simulate the dual-gated API pipeline
-async function callPredictAPI(_file?: File): Promise<PredictResponse> {
-  await new Promise(r => setTimeout(r, 2000))
-  // Cycle through demo outcomes for demonstration
-  const outcomes: PredictResponse[] = [
-    {
-      gate: 1, status: 'blur_error', blur_variance: 42.17, confidence: null,
-      label: null, icd10: null,
-      model_metadata: { architecture: 'MobileNetV2', temperature: 1.1672, validation_auc: 0.8884, calibration_ece: 0.0730, blur_threshold: 100, confidence_threshold: 0.80 },
-    },
-    {
-      gate: 2, status: 'low_confidence', blur_variance: 318.44, confidence: 0.31,
-      label: null, icd10: null,
-      model_metadata: { architecture: 'MobileNetV2', temperature: 1.1672, validation_auc: 0.8884, calibration_ece: 0.0730, blur_threshold: 100, confidence_threshold: 0.80 },
-    },
-    {
-      gate: 0, status: 'success', blur_variance: 412.89, confidence: 0.942,
-      label: 'Benign Nevus', icd10: 'D22.9',
-      model_metadata: { architecture: 'MobileNetV2', temperature: 1.1672, validation_auc: 0.8884, calibration_ece: 0.0730, blur_threshold: 100, confidence_threshold: 0.80 },
-    },
-    {
-      gate: 0, status: 'success', blur_variance: 389.12, confidence: 0.876,
-      label: 'Melanoma', icd10: 'C43.9',
-      model_metadata: { architecture: 'MobileNetV2', temperature: 1.1672, validation_auc: 0.8884, calibration_ece: 0.0730, blur_threshold: 100, confidence_threshold: 0.80 },
-    },
-  ]
-  const idx = Math.floor(Date.now() / 3000) % outcomes.length
-  return outcomes[idx]
-}
+const API_URL = "https://special-palm-tree-69r6q9ppxqjvh4p79-8000.app.github.dev/predict"
 
 export default function CameraScreen({ navigate }: Props) {
   const [uploadState, setUploadState] = useState<UploadState>('idle')
   const [scanY, setScanY] = useState(0)
   const [gateLabel, setGateLabel] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (uploadState !== 'uploading') return
@@ -54,25 +27,73 @@ export default function CameraScreen({ navigate }: Props) {
     return () => cancelAnimationFrame(frame)
   }, [uploadState])
 
-  const handleCapture = async () => {
+  // 1. Click handler triggers the hidden file input
+  const handleCaptureClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  // 2. File input actually grabs the image and sends it to the PyTorch API
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
     setUploadState('uploading')
     setGateLabel('Running Gate 1: blur check…')
-    await new Promise(r => setTimeout(r, 700))
-    setGateLabel('Running Gate 2: model inference…')
-    const result = await callPredictAPI()
-    setGateLabel('Done')
-    setUploadState('done')
-    await new Promise(r => setTimeout(r, 300))
 
-    if (result.status === 'blur_error') navigate('blur-error', result)
-    else if (result.status === 'low_confidence') navigate('uncertainty', result)
-    else navigate('results', result)
+    const formData = new FormData()
+    formData.append("file", file)
+
+    try {
+      // Small artificial delay so the user can see your cool UI animation
+      await new Promise(r => setTimeout(r, 700))
+      
+      const response = await fetch(API_URL, {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.detail || `Server error: ${response.status}`)
+      }
+
+      setGateLabel('Running Gate 2: model inference…')
+      const result: PredictResponse = await response.json()
+
+      setGateLabel('Done')
+      setUploadState('done')
+      await new Promise(r => setTimeout(r, 300))
+
+      // 3. Route to the correct screen based on the Dual-Gate logic
+      if (result.status === 'blur_error') navigate('blur-error', result)
+      else if (result.status === 'low_confidence') navigate('uncertainty', result)
+      else navigate('results', result)
+
+    } catch (error) {
+      console.error("API Error:", error)
+      alert("Could not connect to the AI model. Check if Port 8000 is Public.")
+      setUploadState('idle')
+    }
+    
+    // Clear the input so you can upload the same file again if needed
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const scanning = uploadState === 'uploading'
 
   return (
     <div className="flex flex-col h-full font-body" style={{ background: '#0a1220' }}>
+      
+      {/* HIDDEN FILE INPUT */}
+      <input 
+        type="file" 
+        accept="image/*" 
+        capture="environment"
+        ref={fileInputRef} 
+        onChange={handleFileChange} 
+        className="hidden" 
+      />
+
       <div className="h-14" />
       <div className="flex items-center justify-between px-6 py-3">
         <button
@@ -198,7 +219,7 @@ export default function CameraScreen({ navigate }: Props) {
 
         {/* Capture — 76px exceeds 48dp minimum */}
         <button
-          onClick={handleCapture}
+          onClick={handleCaptureClick}
           disabled={scanning}
           className="flex items-center justify-center transition-all active:scale-95"
           style={{
@@ -210,7 +231,7 @@ export default function CameraScreen({ navigate }: Props) {
           }}
         >
           {scanning
-            ? <div className="w-8 h-8 rounded-full border-2 border-med-blue-500 border-t-transparent animate-spin"/>
+            ? <div className="w-8 h-8 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"/>
             : <div className="w-14 h-14 rounded-full" style={{ background: 'white', border: '3px solid #e2e8f0' }}/>
           }
         </button>
