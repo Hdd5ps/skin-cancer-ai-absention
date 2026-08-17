@@ -58,6 +58,7 @@ jobs:
         name: dermascan-debug-apk
         path: android/app/build/outputs/apk/debug/app-debug.apk
         retention-days: 30
+        if-no-files-found: warn
         
     - name: Build Release APK
       if: github.ref == 'refs/heads/main'
@@ -72,6 +73,7 @@ jobs:
         name: dermascan-release-apk
         path: android/app/build/outputs/apk/release/app-release.apk
         retention-days: 90
+        if-no-files-found: warn
         
     - name: Build Release AAB
       if: github.ref == 'refs/heads/main'
@@ -86,3 +88,4 @@ jobs:
         name: dermascan-release-aab
         path: android/app/build/outputs/bundle/release/app-release.aab
         retention-days: 90
+        if-no-files-found: warn
