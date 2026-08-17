@@ -302,13 +302,13 @@ npm run android:install:debug
 adb install app-release.apk
 
 # Grant permissions
-adb shell pm grant com.skincancerai.app android.permission.CAMERA
+adb shell pm grant com.dermascan.app android.permission.CAMERA
 
 # View logs
 adb logcat | grep dermascan
 
 # Clear app data
-adb shell pm clear com.skincancerai.app
+adb shell pm clear com.dermascan.app
 ```
 
 ### iOS Testing Environment

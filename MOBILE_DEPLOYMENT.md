@@ -77,8 +77,8 @@ This document outlines the strategy for deploying DermaScan AI as a mobile appli
    ```
 
 2. **Configure Capacitor** (Already configured in capacitor.config.ts)
-   - App ID: com.skincancerai.app
-   - App Name: Skin Cancer AI
+   - App ID: com.dermascan.app
+   - App Name: DermaScan AI
    - Web directory: dist
    - Plugins: Camera, Preferences, Filesystem, SplashScreen
 

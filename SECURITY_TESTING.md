@@ -151,7 +151,7 @@ docker run -it -p 8000:8000 opensecurity/mobile-security-framework-mobsf
 #### Runtime Analysis
 ```bash
 # Android runtime analysis
-adb shell dumpsys meminfo com.skincancerai.app
+adb shell dumpsys meminfo com.dermascan.app
 adb logcat | grep dermascan
 adb shell ps | grep dermascan
 
