@@ -21,6 +21,7 @@ export default function CameraScreen({ navigate }: Props) {
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment')
   const [permissionError, setPermissionError] = useState<string | null>(null)
+  const [flashMode, setFlashMode] = useState<'off' | 'on'>('off')
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -84,6 +85,30 @@ export default function CameraScreen({ navigate }: Props) {
   const switchCamera = () => {
     stopCamera()
     setFacingMode(prev => prev === 'environment' ? 'user' : 'environment')
+  }
+
+  const toggleFlash = async () => {
+    if (!cameraStream) return
+    
+    const videoTrack = cameraStream.getVideoTracks()[0]
+    if (!videoTrack) return
+    
+    const capabilities = videoTrack.getCapabilities()
+    if (!('torch' in capabilities)) {
+      alert('Flash not available on this device')
+      return
+    }
+    
+    try {
+      const newFlashMode = flashMode === 'off' ? 'on' : 'off'
+      await videoTrack.applyConstraints({
+        advanced: [{ torch: newFlashMode === 'on' }]
+      })
+      setFlashMode(newFlashMode)
+    } catch (error) {
+      console.error('Error toggling flash:', error)
+      alert('Could not toggle flash')
+    }
   }
 
   // Capture photo from video stream
@@ -485,11 +510,16 @@ export default function CameraScreen({ navigate }: Props) {
 
       {/* Controls — all targets ≥ 48×48dp */}
       <div className="flex items-center justify-between px-10 pb-24 pt-2">
-        {/* Flash button (placeholder for future functionality) */}
+        {/* Flash button */}
         <button
+          onClick={toggleFlash}
           disabled={!cameraReady}
           className="rounded-2xl overflow-hidden transition-all active:scale-90 disabled:opacity-40"
-          style={{ width: 52, height: 52, minWidth: 48, minHeight: 48, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}
+          style={{ 
+            width: 52, height: 52, minWidth: 48, minHeight: 48, 
+            background: flashMode === 'on' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.12)', 
+            border: flashMode === 'on' ? '1px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.2)' 
+          }}
         >
           <div className="w-full h-full flex items-center justify-center">
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
