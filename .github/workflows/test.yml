@@ -95,8 +95,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       
-      - name: Run npm audit
-        run: npm audit --audit-level=moderate
+      - name: Run pnpm audit
+        run: pnpm audit --audit-level=moderate
       
       - name: Run Snyk security scan
         uses: snyk/actions/node@master
