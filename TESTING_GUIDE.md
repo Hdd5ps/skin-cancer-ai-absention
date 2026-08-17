@@ -14,7 +14,7 @@ This testing infrastructure covers:
 
 ```bash
 # Install dependencies
-pnpm install
+npm install
 
 # For Playwright browsers (first time only)
 npx playwright install
@@ -26,56 +26,56 @@ npx playwright install
 
 ```bash
 # Run all unit tests
-pnpm test
+npm test
 
 # Run tests in watch mode
-pnpm test -- --watch
+npm test -- --watch
 
 # Run tests with UI
-pnpm test:ui
+npm run test:ui
 
 # Run tests with coverage
-pnpm test:coverage
+npm run test:coverage
 ```
 
 ### End-to-End Tests (Playwright)
 
 ```bash
 # Run all E2E tests
-pnpm test:e2e
+npm run test:e2e
 
 # Run E2E tests with UI
-pnpm test:e2e:ui
+npm run test:e2e:ui
 
 # Run E2E tests on specific browser
-pnpm test:e2e -- --project=chromium
+npm run test:e2e -- --project=chromium
 ```
 
 ### Performance Tests
 
 ```bash
 # Run Lighthouse performance test
-pnpm test:performance
+npm run test:performance
 ```
 
 ### Security Tests
 
 ```bash
 # Run security audit
-pnpm test:security
+npm run test:security
 ```
 
 ### Capacitor Device Testing
 
 ```bash
 # Build and sync for Android
-pnpm cap:build
+npm run cap:build
 
 # Run Android tests
-pnpm cap:test:android
+npm run cap:test:android
 
 # Run iOS tests
-pnpm cap:test:ios
+npm run cap:test:ios
 ```
 
 ## Test Structure
@@ -105,13 +105,13 @@ e2e/
 
 2. **Build and Sync**
    ```bash
-   pnpm cap:build
+   npm run cap:build
    npx cap sync android
    ```
 
 3. **Run Tests**
    ```bash
-   pnpm cap:test:android
+   npm run cap:test:android
    ```
 
 4. **Manual Testing Checklist**
@@ -134,13 +134,13 @@ e2e/
 
 2. **Build and Sync**
    ```bash
-   pnpm cap:build
+   npm run cap:build
    npx cap sync ios
    ```
 
 3. **Run Tests**
    ```bash
-   pnpm cap:test:ios
+   npm run cap:test:ios
    ```
 
 4. **Manual Testing Checklist**
@@ -169,10 +169,10 @@ Performance tests use Lighthouse to measure:
 
 ```bash
 # Ensure dev server is running
-pnpm dev
+npm run dev
 
 # In another terminal, run performance test
-pnpm test:performance
+npm run test:performance
 ```
 
 ### Performance Benchmarks
@@ -187,7 +187,7 @@ pnpm test:performance
 
 ```bash
 # Run performance-specific unit tests
-pnpm test performance.spec.ts
+npm test performance.spec.ts
 ```
 
 ## Security Testing
@@ -216,10 +216,10 @@ Security tests validate:
 
 ```bash
 # Run security unit tests
-pnpm test security.spec.ts
+npm test security.spec.ts
 
 # Run full security audit
-pnpm test:security
+npm run test:security
 ```
 
 ## Camera Compatibility Testing
@@ -240,10 +240,10 @@ Camera compatibility tests cover:
 
 ```bash
 # Run camera compatibility unit tests
-pnpm test camera-compatibility.spec.ts
+npm test camera-compatibility.spec.ts
 
 # Run E2E camera tests
-pnpm test:e2e camera.spec.ts
+npm run test:e2e camera.spec.ts
 ```
 
 ### Manual Camera Testing
@@ -279,16 +279,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: pnpm/action-setup@v2
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-          cache: 'pnpm'
-      
-      - run: pnpm install
-      - run: pnpm test
-      - run: pnpm test:e2e
-      - run: pnpm test:security
+          cache: 'npm'
+
+      - run: npm install
+      - run: npm test
+      - run: npm run test:e2e
+      - run: npm run test:security
 ```
 
 ## Test Data Management

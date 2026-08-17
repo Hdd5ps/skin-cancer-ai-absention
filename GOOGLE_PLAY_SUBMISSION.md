@@ -99,12 +99,16 @@ Privacy Policy: [your-website.com/privacy]
 2. Create new release:
    - **Release type**: Production
    - **Release name**: "1.0.0 - Initial Release"
-3. Upload AAB file:
+3. Build the frontend first:
+   ```bash
+   npm run build
+   ```
+4. Upload AAB file:
    ```bash
    npm run android:build:bundle
    # Output: android/app/build/outputs/bundle/release/app-release.aab
    ```
-4. Add release notes:
+5. Add release notes:
    ```
    Initial release of DermaScan AI:
    - AI-powered skin lesion screening
@@ -209,6 +213,11 @@ skin cancer, dermatology, lesion screening, health monitoring, AI medical, skin 
 
 ## Build Commands
 
+### Build Frontend First
+```bash
+npm run build
+```
+
 ### Generate Release AAB
 ```bash
 npm run android:build:bundle
@@ -275,7 +284,8 @@ npm run android:install:debug
 ## Timeline
 
 ### Day 1: Preparation
-- Generate release build
+- Build frontend: `npm run build`
+- Generate release build: `npm run android:build:bundle`
 - Prepare store listing assets
 - Complete content rating
 

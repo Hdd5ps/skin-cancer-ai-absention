@@ -4,10 +4,17 @@ React + Vite + Tailwind CSS project running inside Figma Make.
 
 ## Development Server
 
-A Vite development server is **already running** on `$PORT` (default 8443). You don't need to start it manually.
+Start the development server manually:
 
-- Preview URL: The user can access the running app through the preview panel
+```bash
+npm run dev
+```
+
+The Vite development server runs on port 8443 by default (configurable via PORT environment variable).
+
+- Access URL: http://localhost:8443
 - Hot reload: Changes to source files are reflected immediately
+- Host: Configured to listen on 0.0.0.0 for network access
 
 ## Project Structure
 
@@ -25,8 +32,9 @@ This is the canonical project structure. Start with task-relevant files below. O
 
 - Runtime: React 19 and React DOM 19
 - Styling: Tailwind CSS v4 with the `@tailwindcss/vite` plugin
-- Build tooling: Vite 8, TypeScript 5.7, and `@vitejs/plugin-react`
+- Build tooling: Vite 8, TypeScript 7.0.2, and `@vitejs/plugin-react`
 - Formatting: oxfmt
+- Mobile: Capacitor 8 for Android/iOS deployment
 
 ## Styling
 
@@ -44,11 +52,10 @@ This project uses **Tailwind CSS v4** through the `@tailwindcss/vite` plugin con
 
 The project has comprehensive testing infrastructure:
 
-- **Unit Tests**: Vitest with React Testing Library (`pnpm test`)
-- **E2E Tests**: Playwright for cross-browser testing (`pnpm test:e2e`)
-- **Performance Tests**: Lighthouse integration (`pnpm test:performance`)
-- **Security Tests**: npm audit and Snyk (`pnpm test:security`)
-- **Device Testing**: Capacitor Android/iOS testing (`pnpm cap:test:android`, `pnpm cap:test:ios`)
+- **Unit Tests**: Vitest with React Testing Library (`npm test`)
+- **E2E Tests**: Playwright for cross-browser testing (`npm run test:e2e`)
+- **Performance Tests**: Lighthouse integration (`npm run test:performance`)
+- **Security Tests**: npm audit and Snyk (`npm run test:security`)
 
 Test files are located in:
 - `src/test/` - Unit tests for components and functionality
@@ -59,14 +66,19 @@ See `TESTING_GUIDE.md` for detailed testing procedures and guidelines.
 
 ## Launch and Deployment
 
-The project is configured for Google Play Store deployment:
+The project includes both a React frontend and Python FastAPI backend:
 
-- **Analytics**: Custom analytics service in `src/lib/analytics.ts` for event tracking and error logging
-- **Android Build**: Capacitor-based Android app with signing configuration
-- **Release Scripts**: Automated build scripts for APK/AAB generation
-- **Store Submission**: Complete Google Play Store submission process
+### Frontend Deployment
+- **Build**: `npm run build` - Production build to dist/ directory
+- **Preview**: `npm run preview` - Preview production build locally
+- **Mobile**: Capacitor-based Android/iOS apps with signing configuration
 
-Build commands:
+### Backend Deployment
+- **Local**: `cd backend && python -m uvicorn app:app --host 0.0.0.0 --port 8000`
+- **Production**: Deploy FastAPI app to cloud provider (see CLOUD_DEPLOYMENT.md)
+
+### Mobile Build Commands
+- `npm run cap:build` - Build and sync Capacitor
 - `npm run android:build:debug` - Build debug APK
 - `npm run android:build:release` - Build release APK
 - `npm run android:build:bundle` - Build release AAB for Play Store
@@ -75,4 +87,5 @@ Build commands:
 Launch documentation:
 - `LAUNCH_GUIDE.md` - Complete launch procedures and checklist
 - `GOOGLE_PLAY_SUBMISSION.md` - Detailed Play Store submission guide
+- `CLOUD_DEPLOYMENT.md` - Backend cloud deployment options
 - `scripts/prepare-play-store.sh` - Automated preparation script

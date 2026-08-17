@@ -49,10 +49,10 @@ This guide covers the complete launch process including:
 
 ```bash
 # Run comprehensive test suite
-pnpm test
-pnpm test:e2e
-pnpm test:performance
-pnpm test:security
+npm test
+npm run test:e2e
+npm run test:performance
+npm run test:security
 ```
 
 **Manual Testing Checklist:**
@@ -68,6 +68,9 @@ pnpm test:security
 ### Step 2: Generate Release Build
 
 ```bash
+# Build the frontend first
+npm run build
+
 # Use the preparation script
 ./scripts/prepare-play-store.sh
 
@@ -178,7 +181,7 @@ cd android
 ## Monitoring and Maintenance
 
 ### Crash Reporting
-- **Tool**: Custom analytics service in `src/lib/analytics.ts`
+- **Tool**: Custom error tracking and monitoring
 - **Monitor**: Error logs and crash frequency
 - **Response**: Critical fixes within 24 hours
 
@@ -212,11 +215,12 @@ cd android
 
 ### Update Process
 1. Test thoroughly on multiple devices
-2. Generate new release build
-3. Update version number
-4. Create release notes
-5. Submit to Play Store
-6. Monitor rollout
+2. Build the frontend: `npm run build`
+3. Generate new release build: `npm run android:build:bundle`
+4. Update version number
+5. Create release notes
+6. Submit to Play Store
+7. Monitor rollout
 
 ## Marketing and Promotion
 

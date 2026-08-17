@@ -5,7 +5,7 @@ AI-powered skin lesion screening application with dual-gated analysis pipeline.
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ and pnpm
+- Node.js 18+ and npm
 - Python 3.8+
 - Basic knowledge of terminal commands
 
@@ -13,7 +13,7 @@ AI-powered skin lesion screening application with dual-gated analysis pipeline.
 
 1. **Install Frontend Dependencies**
    ```bash
-   pnpm install
+   npm install
    ```
 
 2. **Install Backend Dependencies**
@@ -32,7 +32,7 @@ AI-powered skin lesion screening application with dual-gated analysis pipeline.
 
 4. **Start Frontend Development Server** (Terminal 2)
    ```bash
-   pnpm run dev
+   npm run dev
    ```
 
 5. **Access the Application**
@@ -43,7 +43,7 @@ AI-powered skin lesion screening application with dual-gated analysis pipeline.
 ## 🏗️ Architecture
 
 ### Frontend (React + Vite)
-- **Tech Stack**: React 19, Vite 8, Tailwind CSS v4, TypeScript
+- **Tech Stack**: React 19, Vite 8, Tailwind CSS v4, TypeScript 7.0.2
 - **Screens**:
   - Home Screen - Landing page with app introduction
   - Camera Screen - Image capture with blur detection
@@ -100,6 +100,21 @@ VITE_ENABLE_BODY_MAPPING=true
 
 ## 🧪 Testing
 
+### Frontend Tests
+```bash
+# Run unit tests
+npm test
+
+# Run E2E tests
+npm run test:e2e
+
+# Run performance tests
+npm run test:performance
+
+# Run security tests
+npm run test:security
+```
+
 ### Backend Tests
 ```bash
 cd backend
@@ -116,7 +131,7 @@ pytest
 
 ### Frontend Build
 ```bash
-pnpm run build
+npm run build
 ```
 
 ### Backend Production
@@ -140,7 +155,7 @@ npx cap add android
 npx cap add ios
 
 # Build and sync
-pnpm run build
+npm run build
 npx cap sync
 ```
 
@@ -171,7 +186,7 @@ This application is a screening tool only and is not intended as a diagnostic de
 
 ### Frontend Issues
 - **API connection errors**: Verify backend is running on port 8000
-- **Build failures**: Clear cache with `rm -rf node_modules .vite`
+- **Build failures**: Clear cache with `rm -rf node_modules .vite` and reinstall with `npm install`
 - **Styling issues**: Ensure Tailwind CSS v4 is properly configured
 
 ## 📝 License

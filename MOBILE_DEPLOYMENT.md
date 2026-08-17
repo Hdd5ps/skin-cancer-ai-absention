@@ -25,8 +25,9 @@ This document outlines the strategy for deploying DermaScan AI as a mobile appli
 ### Current State
 - React + Vite frontend (port 8443)
 - FastAPI backend (port 8000)
+- Capacitor already configured for Android/iOS
 - Local storage for scan history
-- Camera access via file input
+- Camera access via file input (needs Capacitor migration)
 
 ### Target Mobile Architecture
 ```
@@ -69,18 +70,19 @@ This document outlines the strategy for deploying DermaScan AI as a mobile appli
 ## Implementation Roadmap
 
 ### Phase 1: Capacitor Setup (2-3 weeks)
-1. **Install Capacitor**
+1. **Install Capacitor** (Already done in this project)
    ```bash
    npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/ios
    npx cap init
    ```
 
-2. **Configure Capacitor**
-   - Update `capacitor.config.ts`
-   - Set app name, bundle ID, version
-   - Configure server URL (production backend)
+2. **Configure Capacitor** (Already configured in capacitor.config.ts)
+   - App ID: com.skincancerai.app
+   - App Name: Skin Cancer AI
+   - Web directory: dist
+   - Plugins: Camera, Preferences, Filesystem, SplashScreen
 
-3. **Add Platforms**
+3. **Add Platforms** (Already done)
    ```bash
    npx cap add android
    npx cap add ios
@@ -92,7 +94,7 @@ This document outlines the strategy for deploying DermaScan AI as a mobile appli
    - Implement image compression
 
 5. **Storage Migration**
-   - Replace localStorage with Capacitor Storage or SQLite
+   - Replace localStorage with Capacitor Preferences
    - Implement data migration strategy
    - Add cloud sync option
 
@@ -264,14 +266,14 @@ This document outlines the strategy for deploying DermaScan AI as a mobile appli
 ## Next Steps
 
 1. **Immediate (This Week)**
-   - Set up Capacitor project
-   - Configure basic mobile build
-   - Test camera plugin integration
+   - Migrate camera integration to Capacitor Camera plugin
+   - Test Capacitor build process
+   - Update app permissions in native projects
 
 2. **Short-term (Next 2-4 Weeks)**
    - Complete mobile UI adaptations
    - Deploy backend to cloud
-   - Implement proper storage solution
+   - Implement proper storage solution with Capacitor Preferences
 
 3. **Medium-term (1-2 Months)**
    - Complete app store assets
