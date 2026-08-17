@@ -1,6 +1,39 @@
 # DermaScan AI
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![React](https://img.shields.io/badge/React-19.2.8-blue)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-7.0.2-blue)](https://www.typescriptlang.org/)
+[![Python](https://img.shields.io/badge/Python-3.8+-green)](https://www.python.org/)
+
 AI-powered skin lesion screening application with dual-gated analysis pipeline.
+
+## 🎯 Project Overview
+
+DermaScan AI is a personal project focused on learning and development in AI-powered medical applications. It uses advanced machine learning techniques to assist in the early detection of potential skin cancer through image analysis of skin lesions.
+
+### ⚠️ Important Medical Disclaimer
+**This application is a screening tool only and is not intended as a diagnostic device.** The results provided are for informational purposes only and should not be used as a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.
+
+## 📋 Project Status
+
+**Current Status**: Development / Personal Project
+
+**Latest Version**: 1.0.0
+
+**Platform Support**:
+- ✅ Web Application (React + Vite)
+- ✅ Android (Capacitor)
+- ✅ iOS (Capacitor)
+
+**Key Features Implemented**:
+- ✅ AI-powered skin lesion analysis
+- ✅ Dual-gated analysis pipeline (blur detection + ML inference)
+- ✅ Scan history and tracking
+- ✅ Body location mapping
+- ✅ Confidence-based results
+- ✅ Mobile-responsive design
+- 🔄 Cloud deployment (in progress)
+- 🔄 App store submission (planned)
 
 ## 🚀 Quick Start
 
@@ -191,23 +224,91 @@ This application is a screening tool only and is not intended as a diagnostic de
 
 ## 📝 License
 
-[Your License Here]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🤝 Contributing
 
-[Your Contribution Guidelines]
+Contributions are welcome! This is a personal project focused on learning and development in AI-powered medical applications.
+
+For detailed contribution guidelines, please see [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+### Quick Start
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## 📞 Support
 
 For issues and questions:
-- GitHub Issues: [Your Repository]
-- Email: [Your Support Email]
+- **GitHub Issues**: [Report bugs or request features](https://github.com/Hdd5ps/skin-cancer-ai-absention/issues)
+- **Discussions**: Use GitHub Discussions for questions and ideas
+- **Email**: For direct communication regarding the project
 
 ## 🙏 Acknowledgments
 
-- MobileNetV2 architecture by Google
-- Medical device regulations guidance
-- AI ethics and safety principles
+- **MobileNetV2** architecture by Google Research
+- **React** and **Vite** for the frontend framework
+- **FastAPI** for the backend API framework
+- **Capacitor** for mobile app deployment
+- **Medical device regulations** guidance from FDA and other regulatory bodies
+- **AI ethics and safety principles** from the AI research community
+- **Open source community** for various tools and libraries used in this project
+
+## 📚 Additional Resources
+
+- [AGENTS.md](./AGENTS.md) - Development setup and architecture
+- [TESTING_GUIDE.md](./TESTING_GUIDE.md) - Testing procedures and guidelines
+- [LAUNCH_GUIDE.md](./LAUNCH_GUIDE.md) - Launch procedures and checklist
+- [MOBILE_DEPLOYMENT.md](./MOBILE_DEPLOYMENT.md) - Mobile deployment strategy
+- [CLOUD_DEPLOYMENT.md](./CLOUD_DEPLOYMENT.md) - Backend cloud deployment options
+- [PRIVACY_POLICY.md](./PRIVACY_POLICY.md) - Privacy policy for the application
+- [TERMS_OF_SERVICE.md](./TERMS_OF_SERVICE.md) - Terms of service
+- [MEDICAL_COMPLIANCE.md](./MEDICAL_COMPLIANCE.md) - Medical compliance information
+
+## 🗺️ Roadmap
+
+### Phase 1: Core Features ✅
+- [x] AI-powered skin lesion analysis
+- [x] Dual-gated analysis pipeline
+- [x] Web application interface
+- [x] Mobile-responsive design
+- [x] Scan history and tracking
+
+### Phase 2: Mobile Deployment 🔄
+- [x] Capacitor integration
+- [x] Android/iOS configuration
+- [x] Camera plugin integration
+- [ ] Native camera optimization
+- [ ] App store submission preparation
+
+### Phase 3: Cloud Deployment 🔄
+- [x] Backend API development
+- [x] Cloud deployment guides
+- [ ] Production cloud deployment
+- [ ] API rate limiting and security
+- [ ] Monitoring and analytics
+
+### Phase 4: Advanced Features 📋
+- [ ] Multi-language support
+- [ ] Advanced image enhancement
+- [ ] Integration with healthcare providers
+- [ ] User authentication (if needed)
+- [ ] Cloud sync for scan history
+
+## 👨‍💻 Author
+
+**DermaScan AI** is developed as a personal learning project to explore AI applications in healthcare.
+
+- **Project Type**: Personal Development / Educational
+- **Primary Focus**: Learning AI/ML in medical applications
+- **Technology Stack**: React, Python, PyTorch, FastAPI, Capacitor
+- **License**: MIT License
+
+## 🌟 Star History
+
+If you find this project helpful or interesting, please consider giving it a star! ⭐
 
 ---
 
