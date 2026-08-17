@@ -14,7 +14,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:performance": "node scripts/performance-test.js",
-    "test:security": "npm audit && snyk test",
+    "test:security": "pnpm audit && snyk test",
     "lint": "oxfmt",
     "cap:build": "pnpm build && pnpm exec cap sync",
     "cap:android": "pnpm run cap:build && pnpm exec cap open android",
