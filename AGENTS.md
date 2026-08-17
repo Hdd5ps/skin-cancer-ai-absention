@@ -39,3 +39,40 @@ This project uses **Tailwind CSS v4** through the `@tailwindcss/vite` plugin con
 - Use double quotes for strings containing apostrophes (`"We're here to help"`), or escape them in single-quoted strings. An unescaped apostrophe in a single-quoted string breaks the build.
 - Ensure JSX tags are closed and braces are balanced.
 - Export components as default exports.
+
+## Testing
+
+The project has comprehensive testing infrastructure:
+
+- **Unit Tests**: Vitest with React Testing Library (`pnpm test`)
+- **E2E Tests**: Playwright for cross-browser testing (`pnpm test:e2e`)
+- **Performance Tests**: Lighthouse integration (`pnpm test:performance`)
+- **Security Tests**: npm audit and Snyk (`pnpm test:security`)
+- **Device Testing**: Capacitor Android/iOS testing (`pnpm cap:test:android`, `pnpm cap:test:ios`)
+
+Test files are located in:
+- `src/test/` - Unit tests for components and functionality
+- `e2e/` - End-to-end browser tests
+- `scripts/performance-test.js` - Lighthouse performance automation
+
+See `TESTING_GUIDE.md` for detailed testing procedures and guidelines.
+
+## Launch and Deployment
+
+The project is configured for Google Play Store deployment:
+
+- **Analytics**: Custom analytics service in `src/lib/analytics.ts` for event tracking and error logging
+- **Android Build**: Capacitor-based Android app with signing configuration
+- **Release Scripts**: Automated build scripts for APK/AAB generation
+- **Store Submission**: Complete Google Play Store submission process
+
+Build commands:
+- `npm run android:build:debug` - Build debug APK
+- `npm run android:build:release` - Build release APK
+- `npm run android:build:bundle` - Build release AAB for Play Store
+- `npm run android:install:debug` - Install debug APK to connected device
+
+Launch documentation:
+- `LAUNCH_GUIDE.md` - Complete launch procedures and checklist
+- `GOOGLE_PLAY_SUBMISSION.md` - Detailed Play Store submission guide
+- `scripts/prepare-play-store.sh` - Automated preparation script

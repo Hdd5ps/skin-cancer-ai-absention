@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import HomeScreen from './screens/HomeScreen'
 import CameraScreen from './screens/CameraScreen'
 import BlurErrorScreen from './screens/BlurErrorScreen'
 import UncertaintyScreen from './screens/UncertaintyScreen'
 import ResultsScreen from './screens/ResultsScreen'
 import ScanHistoryScreen from './screens/ScanHistoryScreen'
+import { AnalyticsService, AnalyticsEvents } from './lib/analytics'
 
 export type Screen = 'home' | 'camera' | 'blur-error' | 'uncertainty' | 'results' | 'history'
 
@@ -51,6 +52,12 @@ const DEMO_RESPONSES: Record<Screen, PredictResponse | null> = {
 export default function App() {
   const [screen, setScreen] = useState<Screen>('home')
   const [apiResult, setApiResult] = useState<PredictResponse | null>(null)
+
+  // Track screen changes for analytics
+  useEffect(() => {
+    const screenName = screen.replace('-', '_')
+    AnalyticsService.logScreenView(screenName)
+  }, [screen])
 
   const navigate = (s: Screen, result?: PredictResponse) => {
     setApiResult(result ?? DEMO_RESPONSES[s] ?? null)
