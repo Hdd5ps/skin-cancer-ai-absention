@@ -12,22 +12,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'pnpm'
+          cache: 'npm'
       
       - name: Install dependencies
-        run: pnpm install
+        run: npm install
       
       - name: Run unit tests
-        run: pnpm test
+        run: npm test
       
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
@@ -41,25 +36,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'pnpm'
+          cache: 'npm'
       
       - name: Install dependencies
-        run: pnpm install
+        run: npm install
       
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
       
       - name: Run E2E tests
-        run: pnpm test:e2e
+        run: npm run test:e2e
       
       - name: Upload Playwright report
         uses: actions/upload-artifact@v3
@@ -74,19 +64,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'pnpm'
+          cache: 'npm'
       
       - name: Install dependencies
-        run: pnpm install
+        run: npm install
       
       - name: Run npm audit
         run: npm audit --audit-level=moderate
@@ -102,31 +87,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'pnpm'
+          cache: 'npm'
       
       - name: Install dependencies
-        run: pnpm install
+        run: npm install
       
       - name: Build application
-        run: pnpm build
+        run: npm run build
       
       - name: Start preview server
-        run: pnpm preview &
+        run: npm run preview &
       
       - name: Wait for server
         run: sleep 10
       
       - name: Run performance test
-        run: pnpm test:performance
+        run: npm run test:performance
         continue-on-error: true
       
       - name: Upload performance report

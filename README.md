@@ -175,9 +175,23 @@ python -m uvicorn app:app --host 0.0.0.0 --port 8000 --workers 4
 
 ## 🚀 Mobile App Deployment
 
-For detailed mobile deployment strategy, see [MOBILE_DEPLOYMENT.md](./MOBILE_DEPLOYMENT.md).
+### 📱 Getting the Installable APK
 
-### Quick Mobile Setup (Capacitor)
+The easiest way to get an installable APK for your Android phone is through our automated GitHub Actions build:
+
+1. **Automatic APK Building**: GitHub Actions automatically builds APK files when code is pushed to the main branch
+2. **Download from GitHub Actions**: 
+   - Go to [GitHub Actions](https://github.com/Hdd5ps/skin-cancer-ai-absention/actions)
+   - Click on the latest "Build Android APK" workflow
+   - Download the `dermascan-debug-apk` artifact
+   - Extract and install the `app-debug.apk` on your phone
+
+3. **Manual Build Trigger**: You can also manually trigger a build from the Actions tab
+
+For detailed instructions, see [docs/APK_BUILD_GUIDE.md](./docs/APK_BUILD_GUIDE.md).
+
+### Manual Mobile Setup (Capacitor)
+For development purposes, you can also build locally:
 ```bash
 # Install Capacitor
 npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/ios
@@ -191,6 +205,8 @@ npx cap add ios
 npm run build
 npx cap sync
 ```
+
+For detailed mobile deployment strategy, see [MOBILE_DEPLOYMENT.md](./MOBILE_DEPLOYMENT.md).
 
 ## 🔒 Security & Compliance
 
