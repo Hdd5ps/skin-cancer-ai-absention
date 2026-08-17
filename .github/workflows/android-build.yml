@@ -15,17 +15,22 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+      
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
-        cache: 'npm'
+        node-version: '20'
+        cache: 'pnpm'
         
     - name: Install dependencies
-      run: npm install
+      run: pnpm install
       
     - name: Build frontend
-      run: npm run build
+      run: pnpm build
       
     - name: Setup Java
       uses: actions/setup-java@v4
@@ -37,7 +42,7 @@ jobs:
       uses: android-actions/setup-android@v3
       
     - name: Sync Capacitor Android
-      run: npx cap sync android
+      run: pnpm exec cap sync android
       
     - name: Grant execute permission for gradlew
       run: chmod +x android/gradlew

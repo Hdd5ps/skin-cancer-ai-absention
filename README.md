@@ -38,7 +38,7 @@ DermaScan AI is a personal project focused on learning and development in AI-pow
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ and npm
+- Node.js 18+ and pnpm
 - Python 3.8+
 - Basic knowledge of terminal commands
 
@@ -46,7 +46,7 @@ DermaScan AI is a personal project focused on learning and development in AI-pow
 
 1. **Install Frontend Dependencies**
    ```bash
-   npm install
+   pnpm install
    ```
 
 2. **Install Backend Dependencies**
@@ -65,7 +65,7 @@ DermaScan AI is a personal project focused on learning and development in AI-pow
 
 4. **Start Frontend Development Server** (Terminal 2)
    ```bash
-   npm run dev
+   pnpm dev
    ```
 
 5. **Access the Application**
@@ -136,16 +136,16 @@ VITE_ENABLE_BODY_MAPPING=true
 ### Frontend Tests
 ```bash
 # Run unit tests
-npm test
+pnpm test
 
 # Run E2E tests
-npm run test:e2e
+pnpm test:e2e
 
 # Run performance tests
-npm run test:performance
+pnpm test:performance
 
 # Run security tests
-npm run test:security
+pnpm test:security
 ```
 
 ### Backend Tests
@@ -164,7 +164,7 @@ pytest
 
 ### Frontend Build
 ```bash
-npm run build
+pnpm build
 ```
 
 ### Backend Production
@@ -194,16 +194,16 @@ For detailed instructions, see [docs/APK_BUILD_GUIDE.md](./docs/APK_BUILD_GUIDE.
 For development purposes, you can also build locally:
 ```bash
 # Install Capacitor
-npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/ios
-npx cap init
+pnpm add @capacitor/core @capacitor/cli @capacitor/android @capacitor/ios
+pnpm exec cap init
 
 # Add platforms
-npx cap add android
-npx cap add ios
+pnpm exec cap add android
+pnpm exec cap add ios
 
 # Build and sync
-npm run build
-npx cap sync
+pnpm build
+pnpm exec cap sync
 ```
 
 For detailed mobile deployment strategy, see [MOBILE_DEPLOYMENT.md](./MOBILE_DEPLOYMENT.md).
@@ -235,7 +235,7 @@ This application is a screening tool only and is not intended as a diagnostic de
 
 ### Frontend Issues
 - **API connection errors**: Verify backend is running on port 8000
-- **Build failures**: Clear cache with `rm -rf node_modules .vite` and reinstall with `npm install`
+- **Build failures**: Clear cache with `rm -rf node_modules .vite` and reinstall with `pnpm install`
 - **Styling issues**: Ensure Tailwind CSS v4 is properly configured
 
 ## 📝 License
