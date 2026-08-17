@@ -10,10 +10,31 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, UploadFile, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from PIL import Image
 from pydantic import BaseModel
+from slowapi import Limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
+
+# Load environment variables from .env file if available
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # python-dotenv not installed, that's fine
+
+from security import (
+    limiter,
+    secure_error_message,
+    sanitize_error_response,
+    validate_api_key,
+    require_api_key,
+    IS_PRODUCTION
+)
 
 CV2_AVAILABLE = True
 CV2_IMPORT_ERROR: str | None = None
@@ -57,6 +78,10 @@ BLUR_THRESHOLD: float = float(os.getenv("BLUR_THRESHOLD", "100.0"))
 
 # Gate 2: Minimum calibrated probability to show a prediction.
 CONFIDENCE_THRESHOLD: float = float(os.getenv("CONFIDENCE_THRESHOLD", "0.80"))
+
+# Rate limiting configuration
+RATE_LIMIT_REQUESTS = int(os.getenv("RATE_LIMIT_REQUESTS", "100"))
+RATE_LIMIT_PERIOD = int(os.getenv("RATE_LIMIT_PERIOD", "3600"))
 
 # Temperature Scaling factor determined post-training via held-out validation.
 TEMPERATURE: float = 1.1672
@@ -274,29 +299,53 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Add rate limiting middleware
+app.add_middleware(SlowAPIMiddleware)
+app.state.limiter = limiter
+
+# Configure CORS based on environment
+def get_cors_origins():
+    if IS_PRODUCTION:
+        # In production, use specific allowed domains
+        return os.getenv("CORS_ORIGINS", "").split(",") if os.getenv("CORS_ORIGINS") else []
+    else:
+        # In development, allow localhost
+        return os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:8443").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:5173").split(","),
-    allow_methods=["POST"],
-    allow_headers=["Content-Type"],
+    allow_origins=get_cors_origins(),
+    allow_methods=["POST", "GET"],
+    allow_headers=["Content-Type", "Authorization", "X-API-Key"],
+    allow_credentials=True,
 )
+
+# Rate limit exception handler
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Rate limit exceeded. Please try again later."},
+    )
 
 
 @app.get("/health")
-def health() -> dict[str, str | bool | None]:
+@limiter.limit("100/minute")
+def health(request: Request) -> dict[str, str | bool | None]:
     return {
         "status": "ok",
         "device": str(device),
         "model_ready": MODEL_READY,
         "health_mode": not MODEL_READY,
-        "model_error": MODEL_INIT_ERROR,
+        "model_error": MODEL_INIT_ERROR if not IS_PRODUCTION else None,
         "torch_available": TORCH_AVAILABLE,
         "opencv_available": CV2_AVAILABLE,
     }
 
 
 @app.post("/predict", response_model=PredictResponse)
-async def predict(file: UploadFile = File(...)) -> PredictResponse:
+@limiter.limit(f"{RATE_LIMIT_REQUESTS}/{RATE_LIMIT_PERIOD}seconds")
+async def predict(request: Request, file: UploadFile = File(...)) -> PredictResponse:
     """
     Accept a skin lesion image and return a gated prediction.
 
@@ -304,53 +353,75 @@ async def predict(file: UploadFile = File(...)) -> PredictResponse:
     endpoint returns early with gate=1. If it passes, Gate 2 (model
     inference) runs. Low-confidence results return gate=2. Only a
     high-confidence prediction returns gate=0 with a label.
+    
+    This endpoint requires API key authentication.
     """
+    # Require API key authentication
+    await require_api_key(request)
+    
     if not MODEL_READY:
+        error_msg = secure_error_message(
+            f"Model inference unavailable: {MODEL_INIT_ERROR or 'unknown initialization error'}",
+            IS_PRODUCTION
+        )
         raise HTTPException(
             status_code=503,
-            detail=f"Model inference unavailable: {MODEL_INIT_ERROR or 'unknown initialization error'}",
+            detail=error_msg,
         )
 
-    # --- Input validation (untrusted boundary) ----------------------------
-    raw = await file.read()
-    _validate_upload(file, raw)
+    try:
+        # --- Input validation (untrusted boundary) ----------------------------
+        raw = await file.read()
+        _validate_upload(file, raw)
 
-    # --- Decode -----------------------------------------------------------
-    bgr, pil = _decode_image(raw)
+        # --- Decode -----------------------------------------------------------
+        bgr, pil = _decode_image(raw)
 
-    # --- Gate 1: blur check -----------------------------------------------
-    blur_var = _laplacian_variance(bgr)
-    if blur_var < BLUR_THRESHOLD:
-        logger.info("Gate 1 triggered: blur_variance=%.2f < threshold=%.2f", blur_var, BLUR_THRESHOLD)
+        # --- Gate 1: blur check -----------------------------------------------
+        blur_var = _laplacian_variance(bgr)
+        if blur_var < BLUR_THRESHOLD:
+            logger.info("Gate 1 triggered: blur_variance=%.2f < threshold=%.2f", blur_var, BLUR_THRESHOLD)
+            return PredictResponse(
+                gate=1,
+                status="blur_error",
+                blur_variance=blur_var,
+            )
+
+        # --- Gate 2: model inference + confidence threshold -------------------
+        prob = _infer(pil)
+        logger.info("Gate 2 inference: prob=%.4f, threshold=%.2f", prob, CONFIDENCE_THRESHOLD)
+
+        # confidence = distance from 0.5 mapped to [0, 1]
+        confidence = max(prob, 1.0 - prob)
+
+        if confidence < CONFIDENCE_THRESHOLD:
+            logger.info("Gate 2 triggered: confidence=%.4f < threshold=%.2f", confidence, CONFIDENCE_THRESHOLD)
+            return PredictResponse(
+                gate=2,
+                status="low_confidence",
+                blur_variance=blur_var,
+                confidence=round(confidence, 4),
+            )
+
+        # --- Success ----------------------------------------------------------
+        class_idx = int(prob >= 0.5)
         return PredictResponse(
-            gate=1,
-            status="blur_error",
-            blur_variance=blur_var,
-        )
-
-    # --- Gate 2: model inference + confidence threshold -------------------
-    prob = _infer(pil)
-    logger.info("Gate 2 inference: prob=%.4f, threshold=%.2f", prob, CONFIDENCE_THRESHOLD)
-
-    # confidence = distance from 0.5 mapped to [0, 1]
-    confidence = max(prob, 1.0 - prob)
-
-    if confidence < CONFIDENCE_THRESHOLD:
-        logger.info("Gate 2 triggered: confidence=%.4f < threshold=%.2f", confidence, CONFIDENCE_THRESHOLD)
-        return PredictResponse(
-            gate=2,
-            status="low_confidence",
+            gate=0,
+            status="success",
             blur_variance=blur_var,
             confidence=round(confidence, 4),
+            label=LABEL_MAP[class_idx],
+            icd10=ICD_MAP[class_idx],
         )
-
-    # --- Success ----------------------------------------------------------
-    class_idx = int(prob >= 0.5)
-    return PredictResponse(
-        gate=0,
-        status="success",
-        blur_variance=blur_var,
-        confidence=round(confidence, 4),
-        label=LABEL_MAP[class_idx],
-        icd10=ICD_MAP[class_idx],
-    )
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
+    except Exception as exc:
+        # Log the full error for debugging
+        logger.exception("Unexpected error during prediction")
+        # Return sanitized error response
+        error_response = sanitize_error_response(exc, IS_PRODUCTION)
+        raise HTTPException(
+            status_code=500,
+            detail=error_response["detail"],
+        )

@@ -68,13 +68,13 @@ export default function ResultsScreen({ navigate, result }: Props) {
           <span className="font-mono text-[9px] text-ink-400">Gate 1 ✓ · Gate 2 ✓</span>
         </div>
         <button
+          onClick={() => navigate('history')}
           className="rounded-full flex items-center justify-center"
-          style={{ width: 48, height: 48, minWidth: 48, minHeight: 48, background: '#f1f5f9' }}
+          style={{ width: 48, height: 48, minWidth: 48, minHeight: 48, background: '#eff6ff' }}
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <circle cx="9" cy="4" r="1.5" fill="#334155"/>
-            <circle cx="9" cy="9" r="1.5" fill="#334155"/>
-            <circle cx="9" cy="14" r="1.5" fill="#334155"/>
+            <path d="M3 9a6 6 0 016-6h2M15 9a6 6 0 01-6 6H7" stroke="#1d56a8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M5 3L3 5l2 2M13 11l2 2-2 2" stroke="#1d56a8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
       </div>

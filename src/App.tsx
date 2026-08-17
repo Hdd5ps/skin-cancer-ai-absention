@@ -4,8 +4,9 @@ import CameraScreen from './screens/CameraScreen'
 import BlurErrorScreen from './screens/BlurErrorScreen'
 import UncertaintyScreen from './screens/UncertaintyScreen'
 import ResultsScreen from './screens/ResultsScreen'
+import ScanHistoryScreen from './screens/ScanHistoryScreen'
 
-export type Screen = 'home' | 'camera' | 'blur-error' | 'uncertainty' | 'results'
+export type Screen = 'home' | 'camera' | 'blur-error' | 'uncertainty' | 'results' | 'history'
 
 /** Mirrors PredictResponse from backend/app.py */
 export interface PredictResponse {
@@ -29,6 +30,7 @@ export interface PredictResponse {
 const DEMO_RESPONSES: Record<Screen, PredictResponse | null> = {
   home: null,
   camera: null,
+  history: null,
   'blur-error': {
     gate: 1, status: 'blur_error', blur_variance: 42.17, confidence: null,
     label: null, icd10: null,
@@ -97,6 +99,7 @@ export default function App() {
           {screen === 'blur-error'  && <BlurErrorScreen navigate={navigate} result={apiResult} />}
           {screen === 'uncertainty' && <UncertaintyScreen navigate={navigate} result={apiResult} />}
           {screen === 'results'     && <ResultsScreen navigate={navigate} result={apiResult} />}
+          {screen === 'history'     && <ScanHistoryScreen navigate={navigate} />}
         </div>
 
         {/* Home indicator */}
@@ -107,8 +110,8 @@ export default function App() {
           className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1 px-2 py-1.5 rounded-2xl"
           style={{ background: 'rgba(15,23,42,0.88)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}
         >
-          {(['home','camera','blur-error','uncertainty','results'] as Screen[]).map((s, i) => {
-            const labels = ['①','②','③','④','⑤']
+          {(['home','camera','blur-error','uncertainty','results','history'] as Screen[]).map((s, i) => {
+            const labels = ['①','②','③','④','⑤','⑥']
             return (
               <button
                 key={s}

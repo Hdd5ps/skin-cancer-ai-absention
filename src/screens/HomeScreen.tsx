@@ -111,7 +111,7 @@ export default function HomeScreen({ navigate }: Props) {
       </div>
 
       {/* CTA */}
-      <div className="px-7 pb-20">
+      <div className="px-7 pb-20 flex flex-col gap-3">
         <button
           onClick={() => navigate('camera')}
           className="w-full py-4 rounded-2xl font-display font-bold text-white text-[17px] transition-all active:scale-[0.98]"
@@ -123,7 +123,14 @@ export default function HomeScreen({ navigate }: Props) {
         >
           Scan Lesion
         </button>
-        <p className="text-center text-[11px] text-ink-500 mt-3">
+        <button
+          onClick={() => navigate('history')}
+          className="w-full py-3 rounded-2xl font-display font-semibold text-ink-600 text-[15px] transition-all active:scale-[0.98]"
+          style={{ background: '#f1f5f9', border: '1px solid #e2e8f0' }}
+        >
+          View Scan History
+        </button>
+        <p className="text-center text-[11px] text-ink-500">
           By continuing, you acknowledge this is not a medical diagnosis.
         </p>
       </div>

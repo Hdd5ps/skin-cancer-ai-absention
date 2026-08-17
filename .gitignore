@@ -1,7 +1,84 @@
-.venv/
-.venv_backend/
-venv/
+# Dependencies
 node_modules/
-__pycache__/
-*.pth
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Production
+dist/
+build/
+
+# Environment variables
 .env
+.env.local
+.env.development
+.env.production
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Model files (large)
+# Keep existing model, ignore new ones
+backend/models/*.pth
+backend/models/*.pt
+backend/models/*.onnx
+
+# Scan history data
+*.db
+*.sqlite
+
+# Temporary files
+*.tmp
+*.temp
+/tmp/
+
+# Capacitor
+android/
+ios/
+.capacitor/
+
+# Figma
+.figmake/
