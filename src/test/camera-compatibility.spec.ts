@@ -151,13 +151,12 @@ describe('Camera Compatibility Tests', () => {
   it('should handle camera stream disconnection', async () => {
     let streamDisconnected = false
 
+    const mockTrack = {
+      stop: vi.fn(() => { streamDisconnected = true }),
+    }
+
     mockMediaDevices.getUserMedia.mockResolvedValue({
-      getTracks: () => [
-        {
-          stop: vi.fn(),
-          onended: () => { streamDisconnected = true },
-        },
-      ],
+      getTracks: () => [mockTrack],
     })
 
     const stream = await navigator.mediaDevices.getUserMedia({ video: true })

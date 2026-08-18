@@ -29,6 +29,17 @@ describe('CameraScreen', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    
+    // Mock navigator.mediaDevices
+    Object.defineProperty(navigator, 'mediaDevices', {
+      writable: true,
+      value: {
+        getUserMedia: vi.fn(() => Promise.resolve({
+          getTracks: () => [{ stop: vi.fn() }],
+        })),
+        enumerateDevices: vi.fn(() => Promise.resolve([])),
+      },
+    })
   })
 
   afterEach(() => {

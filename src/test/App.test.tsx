@@ -10,9 +10,9 @@ describe('App', () => {
 
   it('renders home screen by default', () => {
     render(<App />)
-    // Check if any text content is rendered
-    const textContent = screen.getByText(/skin/i)
-    expect(textContent).toBeInTheDocument()
+    // Check if heading with skin text is rendered
+    const heading = screen.getByRole('heading', { name: /skin/i })
+    expect(heading).toBeInTheDocument()
   })
 
   it('has proper mobile structure', () => {
