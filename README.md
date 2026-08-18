@@ -38,7 +38,7 @@ DermaScan AI is a personal project focused on learning and development in AI-pow
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ and pnpm
+- Node.js 22+ and pnpm
 - Python 3.8+
 - Basic knowledge of terminal commands
 

@@ -80,7 +80,7 @@ BLUR_THRESHOLD: float = float(os.getenv("BLUR_THRESHOLD", "100.0"))
 CONFIDENCE_THRESHOLD: float = float(os.getenv("CONFIDENCE_THRESHOLD", "0.80"))
 
 # Rate limiting configuration
-RATE_LIMIT_REQUESTS = int(os.getenv("RATE_LIMIT_REQUESTS", "100"))
+RATE_LIMIT_REQUESTS = int(os.getenv("RATE_LIMIT_REQUESTS", "50"))  # Stricter default for production
 RATE_LIMIT_PERIOD = int(os.getenv("RATE_LIMIT_PERIOD", "3600"))
 
 # Temperature Scaling factor determined post-training via held-out validation.
@@ -307,17 +307,21 @@ app.state.limiter = limiter
 def get_cors_origins():
     if IS_PRODUCTION:
         # In production, use specific allowed domains
-        return os.getenv("CORS_ORIGINS", "").split(",") if os.getenv("CORS_ORIGINS") else []
+        cors_origins = os.getenv("CORS_ORIGINS", "").split(",") if os.getenv("CORS_ORIGINS") else []
+        # Always include Capacitor schemes for mobile apps
+        capacitor_origins = ["capacitor://localhost", "http://localhost", "https://localhost"]
+        return cors_origins + capacitor_origins
     else:
-        # In development, allow localhost
-        return os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:8443").split(",")
+        # In development, allow localhost and Capacitor schemes
+        return os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:8443,http://localhost:3000,capacitor://localhost,http://localhost").split(",")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_cors_origins(),
-    allow_methods=["POST", "GET"],
-    allow_headers=["Content-Type", "Authorization", "X-API-Key"],
+    allow_methods=["POST", "GET", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-API-Key", "X-Requested-With"],
     allow_credentials=True,
+    max_age=600,  # Cache preflight requests for 10 minutes
 )
 
 # Rate limit exception handler

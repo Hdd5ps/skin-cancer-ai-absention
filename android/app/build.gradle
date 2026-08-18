@@ -28,9 +28,6 @@ android {
             // Signing configuration is applied from signing.gradle
         }
     }
-    
-    // Apply signing configuration
-    apply from: 'signing.gradle'
 }
 
 repositories {

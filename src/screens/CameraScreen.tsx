@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
+import { Camera, CameraResultType } from '@capacitor/camera'
+import { Capacitor } from '@capacitor/core'
 import type { Screen, PredictResponse } from '../App'
 import type { BodyLocation, ScanRecord } from '../types/scanHistory'
 import { saveScan } from '../types/scanHistory'
@@ -22,9 +24,15 @@ export default function CameraScreen({ navigate }: Props) {
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment')
   const [permissionError, setPermissionError] = useState<string | null>(null)
   const [flashMode, setFlashMode] = useState<'off' | 'on'>('off')
+  const [isNative, setIsNative] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Check if running on native platform
+  useEffect(() => {
+    setIsNative(Capacitor.isNativePlatform())
+  }, [])
 
   useEffect(() => {
     if (uploadState !== 'uploading') return
@@ -40,13 +48,17 @@ export default function CameraScreen({ navigate }: Props) {
     return () => cancelAnimationFrame(frame)
   }, [uploadState])
 
-  // Initialize camera when component mounts
+  // Initialize camera when component mounts (only for web)
   useEffect(() => {
-    startCamera()
-    return () => {
-      stopCamera()
+    if (!isNative) {
+      startCamera()
     }
-  }, [facingMode])
+    return () => {
+      if (!isNative) {
+        stopCamera()
+      }
+    }
+  }, [facingMode, isNative])
 
   const startCamera = async () => {
     setPermissionError(null)
@@ -89,16 +101,16 @@ export default function CameraScreen({ navigate }: Props) {
 
   const toggleFlash = async () => {
     if (!cameraStream) return
-    
+
     const videoTrack = cameraStream.getVideoTracks()[0]
     if (!videoTrack) return
-    
+
     const capabilities = videoTrack.getCapabilities()
     if (!('torch' in capabilities)) {
       alert('Flash not available on this device')
       return
     }
-    
+
     try {
       const newFlashMode = flashMode === 'off' ? 'on' : 'off'
       await videoTrack.applyConstraints({
@@ -111,8 +123,83 @@ export default function CameraScreen({ navigate }: Props) {
     }
   }
 
-  // Capture photo from video stream
+  // Native camera capture using Capacitor
+  const handleNativeCameraCapture = async () => {
+    try {
+      setUploadState('permission-requested')
+      
+      const image = await Camera.getPhoto({
+        quality: 90,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: 'camera',
+        direction: facingMode === 'environment' ? 'rear' : 'front'
+      })
+
+      setCapturedImage(image.dataUrl || null)
+      setUploadState('uploading')
+      setGateLabel('Running Gate 1: blur check…')
+
+      // Convert data URL to blob for API upload
+      const response = await fetch(image.dataUrl!)
+      const blob = await response.blob()
+
+      const formData = new FormData()
+      formData.append("file", blob, 'capture.jpg')
+
+      try {
+        await new Promise(r => setTimeout(r, 700))
+
+        const apiResponse = await fetch(API_URL, {
+          method: "POST",
+          body: formData,
+          headers: {
+            "X-API-Key": API_KEY,
+          },
+        })
+
+        if (!apiResponse.ok) {
+          const errorData = await apiResponse.json().catch(() => ({}))
+          throw new Error(errorData.detail || `Server error: ${apiResponse.status}`)
+        }
+
+        setGateLabel('Running Gate 2: model inference…')
+        const result: PredictResponse = await apiResponse.json()
+
+        setGateLabel('Done')
+        setUploadState('done')
+        setPendingResult(result)
+        await new Promise(r => setTimeout(r, 300))
+
+        if (result.status === 'blur_error') {
+          navigate('blur-error', result)
+        } else if (result.status === 'low_confidence') {
+          navigate('uncertainty', result)
+        } else {
+          setUploadState('location-select')
+        }
+
+      } catch (error) {
+        console.error("API Error:", error)
+        alert("Could not connect to the AI model. Check if Port 8000 is Public.")
+        setUploadState('idle')
+        setCapturedImage(null)
+      }
+    } catch (error) {
+      console.error('Camera capture error:', error)
+      setPermissionError(error instanceof Error ? error.message : 'Camera access denied')
+      setUploadState('permission-denied')
+    }
+  }
+
+  // Capture photo from video stream (web only)
   const handleCaptureClick = () => {
+    // Use native camera on mobile platforms
+    if (isNative) {
+      handleNativeCameraCapture()
+      return
+    }
+
     if (!videoRef.current || !canvasRef.current) return
     
     const video = videoRef.current
@@ -196,6 +283,12 @@ export default function CameraScreen({ navigate }: Props) {
 
   // Handle file upload from gallery
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Use native photo picker on mobile platforms
+    if (isNative) {
+      handleNativeGalleryUpload()
+      return
+    }
+
     const file = event.target.files?.[0]
     if (!file) return
 
@@ -215,7 +308,7 @@ export default function CameraScreen({ navigate }: Props) {
     try {
       // Small artificial delay so the user can see your cool UI animation
       await new Promise(r => setTimeout(r, 700))
-      
+
       const response = await fetch(API_URL, {
         method: "POST",
         body: formData,
@@ -253,12 +346,80 @@ export default function CameraScreen({ navigate }: Props) {
       setUploadState('idle')
       setCapturedImage(null)
     }
-    
+
     // Clear the input so you can upload the same file again if needed
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  const handleLocationConfirm = () => {
+  // Native gallery upload using Capacitor
+  const handleNativeGalleryUpload = async () => {
+    try {
+      setUploadState('permission-requested')
+
+      const image = await Camera.getPhoto({
+        quality: 90,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: 'photos'
+      })
+
+      setCapturedImage(image.dataUrl || null)
+      setUploadState('uploading')
+      setGateLabel('Running Gate 1: blur check…')
+
+      // Convert data URL to blob for API upload
+      const response = await fetch(image.dataUrl!)
+      const blob = await response.blob()
+
+      const formData = new FormData()
+      formData.append("file", blob, 'upload.jpg')
+
+      try {
+        await new Promise(r => setTimeout(r, 700))
+
+        const apiResponse = await fetch(API_URL, {
+          method: "POST",
+          body: formData,
+          headers: {
+            "X-API-Key": API_KEY,
+          },
+        })
+
+        if (!apiResponse.ok) {
+          const errorData = await apiResponse.json().catch(() => ({}))
+          throw new Error(errorData.detail || `Server error: ${apiResponse.status}`)
+        }
+
+        setGateLabel('Running Gate 2: model inference…')
+        const result: PredictResponse = await apiResponse.json()
+
+        setGateLabel('Done')
+        setUploadState('done')
+        setPendingResult(result)
+        await new Promise(r => setTimeout(r, 300))
+
+        if (result.status === 'blur_error') {
+          navigate('blur-error', result)
+        } else if (result.status === 'low_confidence') {
+          navigate('uncertainty', result)
+        } else {
+          setUploadState('location-select')
+        }
+
+      } catch (error) {
+        console.error("API Error:", error)
+        alert("Could not connect to the AI model. Check if Port 8000 is Public.")
+        setUploadState('idle')
+        setCapturedImage(null)
+      }
+    } catch (error) {
+      console.error('Gallery upload error:', error)
+      setPermissionError(error instanceof Error ? error.message : 'Photo library access denied')
+      setUploadState('permission-denied')
+    }
+  }
+
+  const handleLocationConfirm = async () => {
     if (!capturedImage || !pendingResult) return
 
     const scanRecord: ScanRecord = {
@@ -270,27 +431,29 @@ export default function CameraScreen({ navigate }: Props) {
       bodyLocation: bodyLocation,
     }
 
-    saveScan(scanRecord)
+    await saveScan(scanRecord)
     navigate('results', pendingResult)
   }
 
   const scanning = uploadState === 'uploading'
-  const cameraReady = uploadState === 'idle' && cameraStream !== null
+  const cameraReady = isNative ? uploadState === 'idle' : uploadState === 'idle' && cameraStream !== null
 
   return (
     <div className="flex flex-col h-full font-body" style={{ background: '#0a1220' }}>
       
-      {/* Hidden canvas for capturing frames */}
-      <canvas ref={canvasRef} className="hidden" />
+      {/* Hidden canvas for capturing frames (web only) */}
+      {!isNative && <canvas ref={canvasRef} className="hidden" />}
       
-      {/* Hidden file input for gallery uploads */}
-      <input 
-        type="file" 
-        accept="image/*" 
-        ref={fileInputRef} 
-        onChange={handleFileUpload} 
-        className="hidden" 
-      />
+      {/* Hidden file input for gallery uploads (web only) */}
+      {!isNative && (
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          onChange={handleFileUpload}
+          className="hidden"
+        />
+      )}
       
       {/* Permission Request State */}
       {uploadState === 'permission-requested' && (
@@ -347,24 +510,28 @@ export default function CameraScreen({ navigate }: Props) {
             <span className="font-mono text-[9px] text-blue-400 mt-0.5 animate-pulse">{gateLabel}</span>
           )}
         </div>
-        <button
-          onClick={switchCamera}
-          disabled={!cameraReady}
-          className="w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-90 disabled:opacity-40"
-          style={{ background: 'rgba(255,255,255,0.1)', minWidth: 48, minHeight: 48 }}
-        >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M1 4c0-1.1.9-2 2-2h3l2-2h4l2 2h3c1.1 0 2 .9 2 2v8c0 1.1-.9 2-2 2H3c-1.1 0-2-.9-2-2V4z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <circle cx="9" cy="8" r="2.5" stroke="white" strokeWidth="1.5"/>
-            <path d="M13 12l2 2m0-2l-2 2" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-        </button>
+        {!isNative ? (
+          <button
+            onClick={switchCamera}
+            disabled={!cameraReady}
+            className="w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-90 disabled:opacity-40"
+            style={{ background: 'rgba(255,255,255,0.1)', minWidth: 48, minHeight: 48 }}
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M1 4c0-1.1.9-2 2-2h3l2-2h4l2 2h3c1.1 0 2 .9 2 2v8c0 1.1-.9 2-2 2H3c-1.1 0-2-.9-2-2V4z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="9" cy="8" r="2.5" stroke="white" strokeWidth="1.5"/>
+              <path d="M13 12l2 2m0-2l-2 2" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </button>
+        ) : (
+          <div style={{ width: 48, height: 48 }} /> // Spacer for layout consistency
+        )}
       </div>
 
       {/* Viewfinder */}
       <div className="flex-1 flex items-center justify-center relative overflow-hidden">
-        {/* Live camera feed */}
-        {cameraReady && (
+        {/* Live camera feed (web only) */}
+        {!isNative && cameraReady && (
           <video
             ref={videoRef}
             autoPlay
@@ -376,9 +543,9 @@ export default function CameraScreen({ navigate }: Props) {
             }}
           />
         )}
-        
-        {/* Fallback background when camera not ready */}
-        {!cameraReady && (
+
+        {/* Fallback background when camera not ready or on native */}
+        {(!cameraReady || isNative) && (
           <div
             className="absolute inset-0"
             style={{ background: 'radial-gradient(ellipse at 40% 50%, #1a2840 0%, #0a1220 70%)' }}
@@ -449,7 +616,7 @@ export default function CameraScreen({ navigate }: Props) {
             <path d="M8 5v.5M8 7.5v4" stroke="#6ba3f0" strokeWidth="1.3" strokeLinecap="round"/>
           </svg>
           <span className="text-[12px] font-medium" style={{ color: 'rgba(255,255,255,0.8)' }}>
-            {cameraReady ? 'Position lesion within the frame or tap gallery to upload' : 'Allow camera access or tap gallery to upload'}
+            {isNative ? 'Tap capture to use camera or gallery to upload' : (cameraReady ? 'Position lesion within the frame or tap gallery to upload' : 'Allow camera access or tap gallery to upload')}
           </span>
         </div>
       </div>
@@ -510,24 +677,28 @@ export default function CameraScreen({ navigate }: Props) {
 
       {/* Controls — all targets ≥ 48×48dp */}
       <div className="flex items-center justify-between px-10 pb-24 pt-2">
-        {/* Flash button */}
-        <button
-          onClick={toggleFlash}
-          disabled={!cameraReady}
-          className="rounded-2xl overflow-hidden transition-all active:scale-90 disabled:opacity-40"
-          style={{ 
-            width: 52, height: 52, minWidth: 48, minHeight: 48, 
-            background: flashMode === 'on' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.12)', 
-            border: flashMode === 'on' ? '1px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.2)' 
-          }}
-        >
-          <div className="w-full h-full flex items-center justify-center">
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-              <path d="M9 1L6 4H3c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h3l3 3M13 1l3 3h3c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2h-3l-3 3" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M9 10h4M11 8v4" stroke="white" strokeWidth="1.6" strokeLinecap="round"/>
-            </svg>
-          </div>
-        </button>
+        {/* Flash button (web only) */}
+        {!isNative ? (
+          <button
+            onClick={toggleFlash}
+            disabled={!cameraReady}
+            className="rounded-2xl overflow-hidden transition-all active:scale-90 disabled:opacity-40"
+            style={{
+              width: 52, height: 52, minWidth: 48, minHeight: 48,
+              background: flashMode === 'on' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.12)',
+              border: flashMode === 'on' ? '1px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.2)'
+            }}
+          >
+            <div className="w-full h-full flex items-center justify-center">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <path d="M9 1L6 4H3c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h3l3 3M13 1l3 3h3c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2h-3l-3 3" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M9 10h4M11 8v4" stroke="white" strokeWidth="1.6" strokeLinecap="round"/>
+              </svg>
+            </div>
+          </button>
+        ) : (
+          <div style={{ width: 52, height: 52 }} /> // Spacer for layout consistency
+        )}
 
         {/* Capture — 76px exceeds 48dp minimum */}
         <button
@@ -550,7 +721,7 @@ export default function CameraScreen({ navigate }: Props) {
 
         {/* Gallery button - triggers file upload */}
         <button
-          onClick={() => fileInputRef.current?.click()}
+          onClick={isNative ? handleNativeGalleryUpload : () => fileInputRef.current?.click()}
           disabled={scanning}
           className="rounded-2xl flex items-center justify-center transition-all active:scale-90 disabled:opacity-40"
           style={{ width: 52, height: 52, minWidth: 48, minHeight: 48, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}

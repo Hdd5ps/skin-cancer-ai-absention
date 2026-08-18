@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Screen } from '../App'
 import type { ScanRecord, BodyLocation } from '../types/scanHistory'
-import { getScanHistory, deleteScan, BODY_LOCATION_LABELS } from '../types/scanHistory'
+import { getScanHistory, deleteScan, clearScanHistory, BODY_LOCATION_LABELS } from '../types/scanHistory'
 
 interface Props { navigate: (s: Screen) => void }
 
@@ -12,15 +12,32 @@ const STYLE: Record<string, { color: string; bg: string; border: string }> = {
 }
 
 export default function ScanHistoryScreen({ navigate }: Props) {
-  const [history, setHistory] = useState<ScanRecord[]>(getScanHistory())
+  const [history, setHistory] = useState<ScanRecord[]>([])
   const [selectedScan, setSelectedScan] = useState<ScanRecord | null>(null)
   const [viewMode, setViewMode] = useState<'list' | 'detail' | 'compare'>('list')
   const [compareScanId, setCompareScanId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const handleDelete = (id: string) => {
+  // Load history on mount
+  useEffect(() => {
+    loadHistory()
+  }, [])
+
+  const loadHistory = async () => {
+    try {
+      const data = await getScanHistory()
+      setHistory(data)
+    } catch (error) {
+      console.error('Failed to load history:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
     if (confirm('Delete this scan record?')) {
-      deleteScan(id)
-      setHistory(getScanHistory())
+      await deleteScan(id)
+      await loadHistory()
       if (selectedScan?.id === id) {
         setSelectedScan(null)
         setViewMode('list')
@@ -175,10 +192,10 @@ export default function ScanHistoryScreen({ navigate }: Props) {
 
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50">
           <button
-            onClick={() => {
+            onClick={async () => {
               if (confirm('Clear all scan history?')) {
-                localStorage.removeItem('dermascan_history')
-                setHistory([])
+                await clearScanHistory()
+                await loadHistory()
               }
             }}
             className="px-4 py-2 rounded-xl font-mono text-[10px] font-medium text-ink-400"
