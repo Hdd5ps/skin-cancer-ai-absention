@@ -41,6 +41,9 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       
+    - name: Remove existing Android directory if incomplete
+      run: rm -rf android || true
+      
     - name: Add Android platform
       run: pnpm exec cap add android
       
