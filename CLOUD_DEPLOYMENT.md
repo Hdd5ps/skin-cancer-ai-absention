@@ -2,6 +2,31 @@
 
 This guide deploys the FastAPI backend to Render or Railway. The backend is defined by [backend/Procfile](backend/Procfile), which runs `uvicorn app:app --host 0.0.0.0 --port $PORT`, and targets Python 3.11.9 as specified in [backend/runtime.txt](backend/runtime.txt).
 
+## Choosing a Free Hosting Strategy
+
+The full PyTorch backend is difficult to run on a permanent free tier because `torch==2.6.0`, `torchvision==0.21.0`, and OpenCV can exceed 512 MB RAM. Choose between temporary student credits and a durable model-footprint reduction.
+
+### Strategy A — If you HAVE the GitHub Student Developer Pack
+
+The GitHub Student Developer Pack can include cloud credits that make otherwise-paid hosting effectively free while you remain a verified student. These are temporary credits, not a permanent free tier.
+
+- **Heroku**: The Pack provides $13/month in credits for up to 24 months. A Basic dyno at approximately $7/month provides automatic HTTPS and does not sleep, making it the longest predictable runway for this app. The dyno still has 512 MB RAM, so use the CPU-only PyTorch wheel described below; full CUDA-enabled wheels may not fit.
+- **Microsoft Azure for Students**: The offer includes a $100 credit and 25+ free services without requiring a credit card. An App Service B1 plan or a suitably configured Container Apps deployment provides approximately 1.75 GB RAM, which is more suitable for the full PyTorch stack. That tier consumes the $100 credit faster, typically over a few months; scale-to-zero options can stretch the credit when the deployment supports them.
+
+For this project, Heroku is the simpler student-credit host and offers the longer stated runway. Plan the ONNX migration in Strategy B before student status or the credit period ends. Heroku and Azure are student-funded options, not free for the general public.
+
+### Strategy B — If you do NOT have the Student Pack (permanent free)
+
+The durable free-tier approach is to remove the dependency that makes the backend too large: export `backend/models/mobilenetv2_calibrated.pth` to ONNX and serve it with `onnxruntime` instead of `torch` and `torchvision`. ONNX Runtime is much smaller than the full PyTorch stack, so the backend is more likely to fit permanently on a 512 MB Render or Railway service.
+
+The conversion must preserve the existing inference behavior:
+
+- Resize input images to `224x224` and apply ImageNet normalization.
+- Apply temperature scaling as `logits / 1.1672`, then apply sigmoid as currently implemented.
+- Keep the Laplacian-variance blur gate before model inference.
+
+Until the ONNX migration is complete, use the CPU-only PyTorch wheel on Render or Railway and accept that 512 MB remains tight and cold starts occur. ONNX is the recommended long-term answer for both strategies because it removes dependence on expiring student credits and reduces hosting memory pressure.
+
 ## Free Cloud Provider Options
 
 ### Option 1: Render (Recommended)
@@ -203,15 +228,17 @@ Confirm that `VITE_API_URL` includes `/predict`, `VITE_API_KEY` matches `API_KEY
 | --- | --- | --- |
 | Render | Free web service | 512 MB RAM and spin-down after about 15 minutes |
 | Railway | $5 monthly usage credit | Credit is consumed by runtime and resources |
-| Heroku | Paid only; no free dynos since November 2022 | Paid plan and resource limits vary |
+| Heroku | Paid only; no free dynos since November 2022 | Paid plan and resource limits vary; GitHub Student Pack credits may cover it temporarily |
+| Microsoft Azure | Paid by default; Azure for Students may provide $100 credit | Student credit expires and is consumed faster on larger plans |
 
-Paid fallbacks include a larger Render instance, additional Railway usage, or a paid Heroku dyno. Choose a plan with enough memory for the model rather than assuming the full PyTorch wheel fits in 512 MB.
+Heroku and Azure are free-for-students-only through the Student Pack offers, not generally free hosting. Paid fallbacks include a larger Render instance, additional Railway usage, or a paid Heroku or Azure service. Choose a plan with enough memory for the model rather than assuming the full PyTorch wheel fits in 512 MB.
 
 ## Next Steps
 
-1. Create the CPU-only deployment requirements file if targeting a 512 MB free tier.
-2. Deploy to Render first, or use Railway if Render runs out of memory.
-3. Set the production environment variables.
-4. Set `VITE_API_URL` to the deployed `/predict` endpoint and provide `VITE_API_KEY` to the Android CI build.
-5. Build and install the phone app, then test health, permissions, image upload, and cold-start behavior.
-6. Monitor logs, memory usage, and provider costs.
+1. Choose Strategy A if you have the GitHub Student Developer Pack, or Strategy B for a permanent free path.
+2. Create the CPU-only deployment requirements file for an interim 512 MB deployment, or plan the ONNX migration for the durable solution.
+3. Deploy to Render first, use Railway if Render runs out of memory, or use the student-credit host selected in Strategy A.
+4. Set the production environment variables.
+5. Set `VITE_API_URL` to the deployed `/predict` endpoint and provide `VITE_API_KEY` to the Android CI build.
+6. Build and install the phone app, then test health, permissions, image upload, and cold-start behavior.
+7. Monitor logs, memory usage, credit expiry, and provider costs.
