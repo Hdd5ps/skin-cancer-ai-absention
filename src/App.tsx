@@ -65,72 +65,20 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-300 p-4">
+    <div className="min-h-screen w-full bg-slate-100">
       <div
-        className="relative overflow-hidden bg-white shadow-2xl"
+        className="relative h-screen w-full overflow-hidden bg-white"
         style={{
-          width: 390,
-          height: 844,
-          borderRadius: 44,
-          boxShadow: '0 32px 80px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,0,0,0.08)',
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
-        {/* Status bar */}
-        <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-8 pt-3 pb-1">
-          <span className="font-mono text-[11px] font-medium text-ink-900 opacity-80">9:41</span>
-          <div className="w-28 h-7 bg-ink-900 rounded-full" style={{ marginTop: -2 }} />
-          <div className="flex gap-1 items-center opacity-80">
-            <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor" className="text-ink-900">
-              <rect x="0" y="4" width="3" height="8" rx="0.5" opacity="0.4"/>
-              <rect x="4.5" y="2.5" width="3" height="9.5" rx="0.5" opacity="0.6"/>
-              <rect x="9" y="0.5" width="3" height="11.5" rx="0.5"/>
-              <rect x="13.5" y="0" width="2" height="1.5" rx="0.3" opacity="0.5"/>
-            </svg>
-            <svg width="14" height="11" viewBox="0 0 14 11" fill="currentColor" className="text-ink-900">
-              <path d="M7 2.5C5 2.5 3.2 3.3 2 4.6L0.5 3C2.1 1.1 4.4 0 7 0s4.9 1.1 6.5 3L12 4.6C10.8 3.3 9 2.5 7 2.5z" opacity="0.4"/>
-              <path d="M7 5.5C5.8 5.5 4.7 6 4 6.8L2.5 5.2C3.6 4 5.2 3.5 7 3.5s3.4.5 4.5 1.7L10 6.8C9.3 6 8.2 5.5 7 5.5z" opacity="0.7"/>
-              <circle cx="7" cy="9.5" r="1.5"/>
-            </svg>
-            <svg width="25" height="12" viewBox="0 0 25 12" fill="none" className="text-ink-900">
-              <rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor" strokeOpacity="0.35"/>
-              <rect x="2" y="2" width="17" height="8" rx="2" fill="currentColor"/>
-              <path d="M23 4v4a2 2 0 000-4z" fill="currentColor" fillOpacity="0.4"/>
-            </svg>
-          </div>
-        </div>
-
-        {/* Screen content */}
-        <div className="absolute inset-0 overflow-hidden" style={{ borderRadius: 44 }}>
-          {screen === 'home'        && <HomeScreen navigate={navigate} />}
-          {screen === 'camera'      && <CameraScreen navigate={navigate} />}
-          {screen === 'blur-error'  && <BlurErrorScreen navigate={navigate} result={apiResult} />}
-          {screen === 'uncertainty' && <UncertaintyScreen navigate={navigate} result={apiResult} />}
-          {screen === 'results'     && <ResultsScreen navigate={navigate} result={apiResult} />}
-          {screen === 'history'     && <ScanHistoryScreen navigate={navigate} />}
-        </div>
-
-        {/* Home indicator */}
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1 bg-ink-900 rounded-full opacity-20 z-50" />
-
-        {/* Dev nav */}
-        <div
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1 px-2 py-1.5 rounded-2xl"
-          style={{ background: 'rgba(15,23,42,0.88)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}
-        >
-          {(['home','camera','blur-error','uncertainty','results','history'] as Screen[]).map((s, i) => {
-            const labels = ['①','②','③','④','⑤','⑥']
-            return (
-              <button
-                key={s}
-                onClick={() => navigate(s)}
-                className="px-2.5 py-1 rounded-xl text-[10px] font-mono font-medium transition-all"
-                style={{ background: screen === s ? '#3b7de8' : 'transparent', color: screen === s ? '#fff' : 'rgba(255,255,255,0.5)' }}
-              >
-                {labels[i]}
-              </button>
-            )
-          })}
-        </div>
+        {screen === 'home'        && <HomeScreen navigate={navigate} />}
+        {screen === 'camera'      && <CameraScreen navigate={navigate} />}
+        {screen === 'blur-error'  && <BlurErrorScreen navigate={navigate} result={apiResult} />}
+        {screen === 'uncertainty' && <UncertaintyScreen navigate={navigate} result={apiResult} />}
+        {screen === 'results'     && <ResultsScreen navigate={navigate} result={apiResult} />}
+        {screen === 'history'     && <ScanHistoryScreen navigate={navigate} />}
       </div>
     </div>
   )

@@ -52,6 +52,9 @@ jobs:
       
     - name: Sync Capacitor Android
       run: pnpm exec cap sync android
+
+    - name: Configure native Android permissions
+      run: pnpm run prepare:android
       
     - name: Grant execute permission for gradlew
       run: chmod +x android/gradlew

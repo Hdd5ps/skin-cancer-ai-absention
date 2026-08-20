@@ -51,8 +51,6 @@ export default function ResultsScreen({ navigate, result }: Props) {
 
   return (
     <div className="flex flex-col h-full font-body" style={{ background: '#f8fafc' }}>
-      <div className="h-14" />
-
       <div className="flex items-center justify-between px-6 py-3">
         <button
           onClick={() => navigate('camera')}

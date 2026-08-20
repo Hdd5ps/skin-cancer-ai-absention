@@ -65,8 +65,6 @@ export default function ScanHistoryScreen({ navigate }: Props) {
   if (viewMode === 'list' && history.length === 0) {
     return (
       <div className="flex flex-col h-full font-body" style={{ background: '#f8fafc' }}>
-        <div className="h-14" />
-        
         <div className="flex items-center justify-between px-6 py-3">
           <button
             onClick={() => navigate('home')}
@@ -110,8 +108,6 @@ export default function ScanHistoryScreen({ navigate }: Props) {
   if (viewMode === 'list') {
     return (
       <div className="flex flex-col h-full font-body" style={{ background: '#f8fafc' }}>
-        <div className="h-14" />
-        
         <div className="flex items-center justify-between px-6 py-3">
           <button
             onClick={() => navigate('home')}
@@ -216,8 +212,6 @@ export default function ScanHistoryScreen({ navigate }: Props) {
 
     return (
       <div className="flex flex-col h-full font-body" style={{ background: '#f8fafc' }}>
-        <div className="h-14" />
-        
         <div className="flex items-center justify-between px-6 py-3">
           <button
             onClick={() => {
@@ -361,8 +355,6 @@ export default function ScanHistoryScreen({ navigate }: Props) {
 
     return (
       <div className="flex flex-col h-full font-body" style={{ background: '#f8fafc' }}>
-        <div className="h-14" />
-        
         <div className="flex items-center justify-between px-6 py-3">
           <button
             onClick={() => {

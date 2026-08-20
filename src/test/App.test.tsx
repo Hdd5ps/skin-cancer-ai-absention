@@ -21,4 +21,11 @@ describe('App', () => {
     const appContainer = container.firstChild
     expect(appContainer).toBeInTheDocument()
   })
+
+  it('does not render fake device chrome', () => {
+    render(<App />)
+
+    expect(screen.queryByText('9:41')).not.toBeInTheDocument()
+    expect(screen.queryByText('①')).not.toBeInTheDocument()
+  })
 })

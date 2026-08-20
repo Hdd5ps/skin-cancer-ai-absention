@@ -17,8 +17,6 @@ export default function BlurErrorScreen({ navigate, result }: Props) {
 
   return (
     <div className="flex flex-col h-full font-body bg-white">
-      <div className="h-14" />
-
       <div className="flex items-center justify-between px-6 py-3">
         <button
           onClick={() => navigate('camera')}

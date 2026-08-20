@@ -25,6 +25,7 @@ export default function CameraScreen({ navigate }: Props) {
   const [permissionError, setPermissionError] = useState<string | null>(null)
   const [flashMode, setFlashMode] = useState<'off' | 'on'>('off')
   const [isNative, setIsNative] = useState(false)
+  const [permissionSource, setPermissionSource] = useState<'camera' | 'gallery'>('camera')
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -61,6 +62,7 @@ export default function CameraScreen({ navigate }: Props) {
   }, [facingMode, isNative])
 
   const startCamera = async () => {
+    setPermissionSource('camera')
     setPermissionError(null)
     setUploadState('permission-requested')
     
@@ -126,6 +128,7 @@ export default function CameraScreen({ navigate }: Props) {
   // Native camera capture using Capacitor
   const handleNativeCameraCapture = async () => {
     try {
+      setPermissionSource('camera')
       setUploadState('permission-requested')
       
       const image = await Camera.getPhoto({
@@ -354,6 +357,7 @@ export default function CameraScreen({ navigate }: Props) {
   // Native gallery upload using Capacitor
   const handleNativeGalleryUpload = async () => {
     try {
+      setPermissionSource('gallery')
       setUploadState('permission-requested')
 
       const image = await Camera.getPhoto({
@@ -457,7 +461,7 @@ export default function CameraScreen({ navigate }: Props) {
       
       {/* Permission Request State */}
       {uploadState === 'permission-requested' && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ background: '#0a1220' }}>
+        <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ background: '#0a1220', paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
           <div className="text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: 'rgba(59,125,232,0.2)' }}>
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="animate-spin">
@@ -473,27 +477,33 @@ export default function CameraScreen({ navigate }: Props) {
 
       {/* Permission Denied State */}
       {uploadState === 'permission-denied' && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ background: '#0a1220' }}>
+        <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ background: '#0a1220', paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
           <div className="text-center px-8">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.2)' }}>
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
                 <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <p className="text-white text-[15px] font-medium mb-2">Camera access denied</p>
-            <p className="text-white text-[13px] opacity-60 mb-4">{permissionError || 'Please enable camera permissions in your browser settings'}</p>
+            <p className="text-white text-[15px] font-medium mb-2">{permissionSource === 'gallery' ? 'Photo access denied' : 'Camera access denied'}</p>
+            <p className="text-white text-[13px] opacity-60 mb-4">{permissionError || `Please enable ${permissionSource === 'gallery' ? 'photo' : 'camera'} permissions in your device settings`}</p>
             <button
-              onClick={startCamera}
+              onClick={permissionSource === 'gallery' ? handleNativeGalleryUpload : (isNative ? handleNativeCameraCapture : startCamera)}
               className="px-6 py-3 rounded-xl font-medium text-white text-[14px]"
               style={{ background: '#3b7de8' }}
             >
               Try Again
             </button>
+            <button
+              onClick={() => navigate('home')}
+              className="block mx-auto mt-3 px-6 py-3 rounded-xl font-medium text-white text-[14px]"
+              style={{ background: 'rgba(255,255,255,0.1)' }}
+            >
+              Go Back
+            </button>
           </div>
         </div>
       )}
 
-      <div className="h-14" />
       <div className="flex items-center justify-between px-6 py-3">
         <button
           onClick={() => navigate('home')}

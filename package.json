@@ -17,6 +17,7 @@
     "test:security": "pnpm audit && snyk test",
     "lint": "oxfmt",
     "cap:build": "pnpm build && pnpm exec cap sync",
+    "prepare:android": "node scripts/prepare-android-settings.mjs",
     "cap:android": "pnpm run cap:build && pnpm exec cap open android",
     "cap:ios": "pnpm run cap:build && pnpm exec cap open ios",
     "cap:sync": "pnpm exec cap sync",

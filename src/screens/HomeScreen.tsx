@@ -5,9 +5,6 @@ interface Props { navigate: (s: Screen) => void }
 export default function HomeScreen({ navigate }: Props) {
   return (
     <div className="flex flex-col h-full font-body" style={{ background: 'linear-gradient(170deg, #eff6ff 0%, #f8fafc 55%, #ffffff 100%)' }}>
-      {/* Top space for status bar */}
-      <div className="h-14" />
-
       {/* Header */}
       <div className="px-7 pt-6 pb-4">
         <div className="flex items-center gap-2.5 mb-1">
