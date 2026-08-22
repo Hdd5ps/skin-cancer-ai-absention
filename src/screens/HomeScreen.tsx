@@ -78,7 +78,7 @@ export default function HomeScreen({ navigate }: Props) {
 
       {/* Feature pills */}
       <div className="flex gap-2 px-7 mt-4">
-        {['ABCDE Method', 'Instant Analysis', 'HIPAA Aware'].map(label => (
+        {['Image Quality Gate', 'Instant Analysis', 'HIPAA Aware'].map(label => (
           <span
             key={label}
             className="flex-1 text-center font-mono text-[9px] font-medium tracking-wider uppercase py-1.5 rounded-lg"

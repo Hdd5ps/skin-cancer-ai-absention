@@ -6,7 +6,7 @@ import type { BodyLocation, ScanRecord } from '../types/scanHistory'
 import { saveScan } from '../types/scanHistory'
 import BodyLocationSelector from '../components/BodyLocationSelector'
 
-interface Props { navigate: (s: Screen, result?: PredictResponse) => void }
+interface Props { navigate: (s: Screen, result?: PredictResponse, imageData?: string) => void }
 
 type UploadState = 'idle' | 'uploading' | 'done' | 'location-select' | 'permission-requested' | 'permission-denied'
 
@@ -436,7 +436,7 @@ export default function CameraScreen({ navigate }: Props) {
     }
 
     await saveScan(scanRecord)
-    navigate('results', pendingResult)
+    navigate('results', pendingResult, capturedImage)
   }
 
   const scanning = uploadState === 'uploading'

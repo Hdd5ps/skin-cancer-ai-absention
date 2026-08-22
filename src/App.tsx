@@ -27,31 +27,10 @@ export interface PredictResponse {
   }
 }
 
-// Demo fixtures — simulating real backend responses
-const DEMO_RESPONSES: Record<Screen, PredictResponse | null> = {
-  home: null,
-  camera: null,
-  history: null,
-  'blur-error': {
-    gate: 1, status: 'blur_error', blur_variance: 42.17, confidence: null,
-    label: null, icd10: null,
-    model_metadata: { architecture: 'MobileNetV2', temperature: 1.1672, validation_auc: 0.8884, calibration_ece: 0.0730, blur_threshold: 100, confidence_threshold: 0.80 },
-  },
-  uncertainty: {
-    gate: 2, status: 'low_confidence', blur_variance: 318.44, confidence: 0.31,
-    label: null, icd10: null,
-    model_metadata: { architecture: 'MobileNetV2', temperature: 1.1672, validation_auc: 0.8884, calibration_ece: 0.0730, blur_threshold: 100, confidence_threshold: 0.80 },
-  },
-  results: {
-    gate: 0, status: 'success', blur_variance: 412.89, confidence: 0.942,
-    label: 'Benign Nevus', icd10: 'D22.9',
-    model_metadata: { architecture: 'MobileNetV2', temperature: 1.1672, validation_auc: 0.8884, calibration_ece: 0.0730, blur_threshold: 100, confidence_threshold: 0.80 },
-  },
-}
-
 export default function App() {
   const [screen, setScreen] = useState<Screen>('home')
   const [apiResult, setApiResult] = useState<PredictResponse | null>(null)
+  const [capturedImage, setCapturedImage] = useState<string | null>(null)
 
   // Track screen changes for analytics
   useEffect(() => {
@@ -59,8 +38,9 @@ export default function App() {
     AnalyticsService.logScreenView(screenName)
   }, [screen])
 
-  const navigate = (s: Screen, result?: PredictResponse) => {
-    setApiResult(result ?? DEMO_RESPONSES[s] ?? null)
+  const navigate = (s: Screen, result?: PredictResponse, imageData?: string) => {
+    setApiResult(result ?? null)
+    setCapturedImage(imageData ?? null)
     setScreen(s)
   }
 
@@ -77,7 +57,7 @@ export default function App() {
         {screen === 'camera'      && <CameraScreen navigate={navigate} />}
         {screen === 'blur-error'  && <BlurErrorScreen navigate={navigate} result={apiResult} />}
         {screen === 'uncertainty' && <UncertaintyScreen navigate={navigate} result={apiResult} />}
-        {screen === 'results'     && <ResultsScreen navigate={navigate} result={apiResult} />}
+        {screen === 'results'     && <ResultsScreen navigate={navigate} result={apiResult} imageData={capturedImage} />}
         {screen === 'history'     && <ScanHistoryScreen navigate={navigate} />}
       </div>
     </div>
