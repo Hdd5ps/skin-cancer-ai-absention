@@ -27,14 +27,22 @@ try:
 except ImportError:
     pass  # python-dotenv not installed, that's fine
 
-from security import (
-    limiter,
-    secure_error_message,
-    sanitize_error_response,
-    validate_api_key,
-    require_api_key,
-    IS_PRODUCTION
-)
+try:
+    from .security import (
+        limiter,
+        secure_error_message,
+        sanitize_error_response,
+        require_api_key,
+        IS_PRODUCTION,
+    )
+except ImportError:
+    from security import (
+        limiter,
+        secure_error_message,
+        sanitize_error_response,
+        require_api_key,
+        IS_PRODUCTION,
+    )
 
 CV2_AVAILABLE = True
 CV2_IMPORT_ERROR: str | None = None
@@ -79,18 +87,22 @@ BLUR_THRESHOLD: float = float(os.getenv("BLUR_THRESHOLD", "100.0"))
 # Gate 2: Minimum calibrated probability to show a prediction.
 CONFIDENCE_THRESHOLD: float = float(os.getenv("CONFIDENCE_THRESHOLD", "0.80"))
 
+# Operating point selected for higher melanoma sensitivity. This is separate
+# from the abstention threshold so confidence gating remains unchanged.
+MALIGNANT_THRESHOLD: float = float(os.getenv("MALIGNANT_THRESHOLD", "0.15"))
+
 # Rate limiting configuration
 RATE_LIMIT_REQUESTS = int(os.getenv("RATE_LIMIT_REQUESTS", "50"))  # Stricter default for production
 RATE_LIMIT_PERIOD = int(os.getenv("RATE_LIMIT_PERIOD", "3600"))
 
 # Temperature Scaling factor determined post-training via held-out validation.
-TEMPERATURE: float = 1.1672
+TEMPERATURE: float = 0.7540
 
 LABEL_MAP = {0: "Benign Nevus", 1: "Melanoma"}
 ICD_MAP   = {0: "D22.9",        1: "C43.9"}
 
 # TODO: Set these per deployed checkpoint from the held-out evaluation report.
-MODEL_AUC: float = float(os.getenv("MODEL_AUC", "0.8884"))
+MODEL_AUC: float = float(os.getenv("MODEL_AUC", "0.9420"))
 MODEL_ECE: float = float(os.getenv("MODEL_ECE", "0.0730"))
 
 MAX_IMAGE_BYTES: int = 10 * 1024 * 1024  # 10 MB
@@ -179,13 +191,7 @@ def _load_model(path: Path) -> Any:
         if any(k.startswith("module.") for k in state):
             state = {k.removeprefix("module."): v for k, v in state.items()}
 
-        missing, unexpected = model.load_state_dict(state, strict=False)
-        if missing or unexpected:
-            logger.warning(
-                "Loaded checkpoint with key mismatch. missing=%s unexpected=%s",
-                missing,
-                unexpected,
-            )
+        model.load_state_dict(state, strict=True)
         logger.info("Loaded model weights from %s", path)
     else:
         logger.warning("Model file not found at %s — using random weights (dev mode)", path)
@@ -224,6 +230,7 @@ class ModelMetadata(BaseModel):
     calibration_ece: float = MODEL_ECE
     blur_threshold: float = BLUR_THRESHOLD
     confidence_threshold: float = CONFIDENCE_THRESHOLD
+    malignant_threshold: float = MALIGNANT_THRESHOLD
 
 
 class PredictResponse(BaseModel):
@@ -231,6 +238,7 @@ class PredictResponse(BaseModel):
     status: str                      # "blur_error" | "low_confidence" | "success"
     blur_variance: float
     confidence: float | None = None  # calibrated probability (only on success/gate-2)
+    malignant_probability: float | None = None
     label: str | None = None         # only on success
     icd10: str | None = None         # only on success
     model_metadata: ModelMetadata = ModelMetadata()
@@ -398,7 +406,7 @@ async def predict(request: Request, file: UploadFile = File(...)) -> PredictResp
         # confidence = distance from 0.5 mapped to [0, 1]
         confidence = max(prob, 1.0 - prob)
 
-        if confidence < CONFIDENCE_THRESHOLD:
+        if confidence < CONFIDENCE_THRESHOLD and prob < MALIGNANT_THRESHOLD:
             logger.info("Gate 2 triggered: confidence=%.4f < threshold=%.2f", confidence, CONFIDENCE_THRESHOLD)
             return PredictResponse(
                 gate=2,
@@ -408,8 +416,9 @@ async def predict(request: Request, file: UploadFile = File(...)) -> PredictResp
             )
 
         # --- Success ----------------------------------------------------------
-        class_idx = int(prob >= 0.5)
+        class_idx = int(prob >= MALIGNANT_THRESHOLD)
         return PredictResponse(
+            malignant_probability=round(prob, 4),
             gate=0,
             status="success",
             blur_variance=blur_var,

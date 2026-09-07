@@ -12,7 +12,7 @@ from torchvision import models
 BASE_DIR = Path(__file__).resolve().parent
 CHECKPOINT_PATH = BASE_DIR / "models" / "mobilenetv2_calibrated.pth"
 OUTPUT_PATH = BASE_DIR.parent / "public" / "models" / "skin_model.onnx"
-TEMPERATURE = 1.1672
+TEMPERATURE = 0.7540
 
 
 class ModelWithTemperature(nn.Module):

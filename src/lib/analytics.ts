@@ -1,67 +1,42 @@
-// Simplified analytics service that works without Firebase configuration
-// This can be extended with Firebase or other analytics services later
-
 export class AnalyticsService {
   private static initialized = false
-  private static eventQueue: Array<{ name: string; params?: Record<string, any> }> = []
+  private static eventQueue: Array<{ name: string; props?: Record<string, unknown> }> = []
 
-  static async initialize() {
-    try {
-      // Initialize Firebase Analytics if available
-      // For now, we'll log to console and queue events
-      this.initialized = true
-      console.log('Analytics service initialized')
-      
-      // Process queued events
-      while (this.eventQueue.length > 0) {
-        const event = this.eventQueue.shift()
-        if (event) {
-          this.logEvent(event.name, event.params)
-        }
-      }
-    } catch (error) {
-      console.error('Failed to initialize analytics:', error)
+  static initialize(): void {
+    this.initialized = true
+    while (this.eventQueue.length > 0) {
+      const event = this.eventQueue.shift()
+      if (event) this.track(event.name, event.props)
     }
   }
 
-  static async logEvent(name: string, params?: Record<string, any>) {
+  static track(event: string, props?: Record<string, unknown>): void {
     if (!this.initialized) {
-      this.eventQueue.push({ name, params })
+      this.eventQueue.push({ name: event, props })
       return
     }
-
-    try {
-      console.log('Analytics Event:', name, params)
-      // Here you would integrate with Firebase Analytics or other service
-      // await FirebaseAnalytics.logEvent({ name, params })
-    } catch (error) {
-      console.error('Failed to log event:', error)
-    }
+    console.debug('[analytics]', event, props ?? {})
   }
 
-  static async logScreenView(screenName: string) {
-    await this.logEvent('screen_view', { screen_name: screenName })
+  static logEvent(event: string, props?: Record<string, unknown>): void {
+    this.track(event, props)
   }
 
-  static async logError(error: Error, context?: Record<string, any>) {
-    console.error('Analytics Error:', error.message, context)
-    // Here you would integrate with Firebase Crashlytics or other service
-    // await FirebaseCrashlytics.recordError({ message: error.message, stacktrace: error.stack })
+  static logScreenView(screenName: string): void {
+    this.track(AnalyticsEvents.SCREEN_VIEW, { screen_name: screenName })
   }
 
-  static async setUserProperty(property: string, value: string) {
-    console.log('User Property:', property, value)
-    // await FirebaseAnalytics.setUserProperty({ key: property, value })
+  static logError(error: Error, context?: Record<string, unknown>): void {
+    this.track(AnalyticsEvents.ANALYSIS_FAILED, { message: error.message, ...context })
   }
 
-  static async setUserId(userId: string) {
-    console.log('User ID:', userId)
-    // await FirebaseAnalytics.setUserId({ userId })
-  }
+  static setUserProperty(property: string, value: string): void { this.track('user_property', { property, value }) }
+  static setUserId(userId: string): void { this.track('user_id_set', { user_id: userId }) }
 }
 
 // Specific event types for the app
 export const AnalyticsEvents = {
+  SCREEN_VIEW: 'screen_view',
   // Camera events
   CAMERA_OPENED: 'camera_opened',
   CAMERA_PERMISSION_GRANTED: 'camera_permission_granted',

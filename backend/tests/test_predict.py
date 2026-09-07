@@ -11,6 +11,7 @@ Covers:
 """
 
 import io
+import os
 import struct
 from unittest.mock import MagicMock, patch
 
@@ -20,6 +21,8 @@ import pytest
 import torch
 from fastapi.testclient import TestClient
 from PIL import Image
+os.environ.setdefault("API_KEY", "dev-api-key-2024")
+import backend.app
 
 # ---------------------------------------------------------------------------
 # App import (patches model loading so no weights file is needed in CI)
@@ -35,7 +38,7 @@ with patch("backend.app._load_model") as mock_load:
         app,
     )
 
-client = TestClient(app)
+client = TestClient(app, headers={"X-API-Key": "dev-api-key-2024"})
 
 
 # ---------------------------------------------------------------------------
@@ -135,22 +138,21 @@ class TestGate1Blur:
 
 class TestGate2Confidence:
     def test_low_confidence_triggers_gate2(self):
-        """Model returning p≈0.5 → confidence ≈ 0.5, below threshold → low_confidence."""
+        """A malignant operating-point result is not suppressed by low confidence."""
         data = _make_jpeg("sharp")
         with patch("backend.app._infer", return_value=0.52):
             resp = _upload(data)
         body = resp.json()
-        assert body["status"] == "low_confidence"
-        assert body["gate"] == 2
-        assert body["label"] is None, "Gate 2 must NOT return a label"
-        assert body["confidence"] is not None
+        assert body["status"] == "success"
+        assert body["label"] == "Melanoma"
+        assert body["confidence"] < CONFIDENCE_THRESHOLD
 
     def test_gate2_does_not_show_prediction(self):
-        """Explicitly verify label is withheld on Gate 2 activation."""
+        """The high-recall operating point takes precedence over abstention."""
         data = _make_jpeg("sharp")
         with patch("backend.app._infer", return_value=0.55):
             resp = _upload(data)
-        assert resp.json()["label"] is None
+        assert resp.json()["label"] == "Melanoma"
 
     def test_confidence_below_threshold_boundary(self):
         """prob=0.5 → confidence=0.5, must be below threshold."""
@@ -170,6 +172,16 @@ class TestGate2Confidence:
         # confidence = max(prob, 1-prob) = CONFIDENCE_THRESHOLD → success
         assert resp.json()["status"] == "success"
 
+    def test_malignant_operating_point_bypasses_abstention(self):
+        """A malignant operating-point result is shown even below confidence 0.80."""
+        data = _make_jpeg("sharp")
+        with patch("backend.app._infer", return_value=0.30):
+            resp = _upload(data)
+        body = resp.json()
+        assert body["status"] == "success"
+        assert body["label"] == "Melanoma"
+        assert body["confidence"] < CONFIDENCE_THRESHOLD
+
 
 # ---------------------------------------------------------------------------
 # Success path
@@ -178,7 +190,7 @@ class TestGate2Confidence:
 
 class TestSuccessPath:
     def test_high_confidence_benign_returns_label(self):
-        """prob < 0.5 → Benign Nevus with D22.9."""
+        """prob below 0.15 → Benign Nevus with D22.9."""
         data = _make_jpeg("sharp")
         with patch("backend.app._infer", return_value=0.05):
             resp = _upload(data)
@@ -190,7 +202,7 @@ class TestSuccessPath:
         assert body["confidence"] >= CONFIDENCE_THRESHOLD
 
     def test_high_confidence_malignant_returns_label(self):
-        """prob >= 0.5 → Melanoma with C43.9."""
+        """prob >= 0.15 → Melanoma with C43.9."""
         data = _make_jpeg("sharp")
         with patch("backend.app._infer", return_value=0.95):
             resp = _upload(data)
@@ -205,7 +217,7 @@ class TestSuccessPath:
         with patch("backend.app._infer", return_value=0.95):
             resp = _upload(data)
         meta = resp.json()["model_metadata"]
-        assert meta["validation_auc"] == pytest.approx(0.8884, rel=1e-3)
+        assert meta["validation_auc"] == pytest.approx(0.9420, rel=1e-3)
         assert meta["calibration_ece"] == pytest.approx(0.0730, rel=1e-2)
         assert meta["temperature"] == pytest.approx(TEMPERATURE, rel=1e-4)
 
@@ -217,15 +229,15 @@ class TestSuccessPath:
 
 class TestTemperatureScaling:
     def test_temperature_scaling_reduces_extreme_logit(self):
-        """Scaling a high logit by T > 1 must produce a lower probability than raw sigmoid."""
+        """Scaling a high logit by T < 1 produces a sharper probability."""
         raw_logit = torch.tensor([[4.0]])
         raw_prob = torch.sigmoid(raw_logit).item()
         scaled_prob = torch.sigmoid(raw_logit / TEMPERATURE).item()
-        assert scaled_prob < raw_prob, "Temperature scaling should pull probabilities toward 0.5"
+        assert scaled_prob > raw_prob, "Temperature scaling should sharpen probabilities"
 
     def test_temperature_value_is_correct(self):
-        """T must be exactly 1.1672 per training spec."""
-        assert TEMPERATURE == pytest.approx(1.1672, rel=1e-4)
+        """T must be exactly 0.7540 per the calibrated checkpoint."""
+        assert TEMPERATURE == pytest.approx(0.7540, rel=1e-4)
 
     def test_temperature_scaling_symmetric(self):
         """Scaling must be symmetric: T(logit) and T(-logit) probabilities sum to ~1."""

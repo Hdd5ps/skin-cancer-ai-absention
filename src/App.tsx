@@ -15,6 +15,7 @@ export interface PredictResponse {
   status: 'blur_error' | 'low_confidence' | 'success'
   blur_variance: number
   confidence: number | null
+    malignant_probability?: number | null
   label: string | null
   icd10: string | null
   model_metadata: {
@@ -24,6 +25,7 @@ export interface PredictResponse {
     calibration_ece: number
     blur_threshold: number
     confidence_threshold: number
+    malignant_threshold?: number
   }
 }
 

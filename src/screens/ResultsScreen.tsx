@@ -32,9 +32,18 @@ export default function ResultsScreen({ navigate, result, imageData }: Props) {
   const data = result
   const label = data.label ?? 'Model output unavailable'
   const confPct = data.confidence === null ? null : Math.round(data.confidence * 100)
-  const style = { color: '#1d56a8', bg: '#eff6ff', border: '#bfdbfe' }
-  const hasElevatedRiskLabel = label !== 'Benign Nevus'
-
+  const malignantProbability = data.malignant_probability ?? (label === 'Melanoma' ? 1 : 0)
+  const riskBand = malignantProbability >= 0.40 ? 'Elevated concern' : malignantProbability >= 0.15 ? 'Borderline: monitor closely' : 'Lower concern'
+  const riskReport = riskBand === 'Elevated concern'
+    ? 'The model found a pattern that warrants prompt dermatology assessment, especially if the spot is changing, bleeding, painful, or persistent.'
+    : riskBand === 'Borderline: monitor closely'
+      ? 'The result is near the review range. Arrange a qualified dermatology assessment and monitor the spot for change.'
+      : 'The result looks lower risk, but this is not an all-clear and does not rule out skin cancer. Have any changing, bleeding, painful, or persistent spot checked.'
+  const style = riskBand === 'Elevated concern'
+    ? { color: '#b42318', bg: '#fff1f0', border: '#fecaca' }
+    : riskBand === 'Needs review'
+      ? { color: '#b45309', bg: '#fffbeb', border: '#fcd34d' }
+      : { color: '#1d56a8', bg: '#eff6ff', border: '#bfdbfe' }
   return (
     <div className="flex flex-col h-full font-body" style={{ background: '#f8fafc' }}>
       <div className="flex items-center justify-between px-6 py-3">
@@ -80,11 +89,11 @@ export default function ResultsScreen({ navigate, result, imageData }: Props) {
             className="absolute bottom-3 right-3 px-3 py-1.5 rounded-xl font-mono text-[10px] font-bold tracking-wider uppercase flex items-center gap-1.5"
             style={{ background: style.color, color: 'white', boxShadow: `0 4px 12px ${style.color}55` }}
           >
-            {!hasElevatedRiskLabel
+            {riskBand === 'Lower concern'
               ? <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               : <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1.5L8.5 7.5H1.5L5 1.5z" stroke="white" strokeWidth="1.2" strokeLinejoin="round"/></svg>
             }
-            Screening result: {label}
+            {riskBand}: {label}
           </div>
           {/* Blur variance OK */}
           <div className="absolute top-3 right-3 px-2 py-1 rounded-lg font-mono text-[9px]" style={{ background: 'rgba(5,150,105,0.85)', color: 'white' }}>
@@ -123,7 +132,7 @@ export default function ResultsScreen({ navigate, result, imageData }: Props) {
       <div className="mx-6 mt-3 px-4 py-3 rounded-2xl" style={{ background: 'white', border: '1px solid #e2e8f0' }}>
         <p className="font-mono text-[9px] tracking-widest uppercase text-ink-400 mb-2">What this means</p>
         <p className="text-[12px] leading-snug text-ink-700">
-          This screening model can miss concerning skin changes. A result that looks benign does not rule out skin cancer, so have any changing, bleeding, painful, or persistent spot checked by a qualified dermatologist.
+          {riskReport}
         </p>
       </div>
 
