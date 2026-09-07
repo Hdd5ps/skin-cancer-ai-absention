@@ -1,16 +1,18 @@
 import { useState, useEffect, useRef } from 'react'
 import { Camera, CameraResultType } from '@capacitor/camera'
+import { CameraPreview } from '@capacitor-community/camera-preview'
 import { Capacitor } from '@capacitor/core'
 import type { Screen, PredictResponse } from '../App'
 import type { BodyLocation, ScanRecord } from '../types/scanHistory'
 import { saveScan } from '../types/scanHistory'
 import BodyLocationSelector from '../components/BodyLocationSelector'
+import { analyzeImage } from '../lib/localInference'
 
 interface Props { navigate: (s: Screen, result?: PredictResponse, imageData?: string) => void }
 
 type UploadState = 'idle' | 'uploading' | 'done' | 'location-select' | 'permission-requested' | 'permission-denied'
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/predict"
+const API_URL = import.meta.env.VITE_API_URL
 const API_KEY = import.meta.env.VITE_API_KEY || "dev-api-key-2024"
 
 export default function CameraScreen({ navigate }: Props) {
@@ -24,16 +26,11 @@ export default function CameraScreen({ navigate }: Props) {
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment')
   const [permissionError, setPermissionError] = useState<string | null>(null)
   const [flashMode, setFlashMode] = useState<'off' | 'on'>('off')
-  const [isNative, setIsNative] = useState(false)
+  const [isNative] = useState(() => Capacitor.isNativePlatform())
   const [permissionSource, setPermissionSource] = useState<'camera' | 'gallery'>('camera')
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // Check if running on native platform
-  useEffect(() => {
-    setIsNative(Capacitor.isNativePlatform())
-  }, [])
 
   useEffect(() => {
     if (uploadState !== 'uploading') return
@@ -49,17 +46,33 @@ export default function CameraScreen({ navigate }: Props) {
     return () => cancelAnimationFrame(frame)
   }, [uploadState])
 
-  // Initialize camera when component mounts (only for web)
+  // Use the native preview on mobile and getUserMedia on the web.
   useEffect(() => {
-    if (!isNative) {
+    if (isNative) document.documentElement.classList.add('native-camera-preview')
+    if (isNative) {
+      startNativePreview()
+    } else {
       startCamera()
     }
     return () => {
-      if (!isNative) {
-        stopCamera()
-      }
+      document.documentElement.classList.remove('native-camera-preview')
+      stopCamera()
     }
   }, [facingMode, isNative])
+
+  const startNativePreview = async () => {
+    setPermissionSource('camera')
+    setPermissionError(null)
+    setUploadState('permission-requested')
+    try {
+      await CameraPreview.start({ position: facingMode === 'environment' ? 'rear' : 'front', toBack: true, enableOpacity: true, disableAudio: true })
+      setUploadState('idle')
+    } catch (error) {
+      console.error('Native camera preview error:', error)
+      setPermissionError(error instanceof Error ? error.message : 'Camera access denied')
+      setUploadState('permission-denied')
+    }
+  }
 
   const startCamera = async () => {
     setPermissionSource('camera')
@@ -94,14 +107,22 @@ export default function CameraScreen({ navigate }: Props) {
       cameraStream.getTracks().forEach(track => track.stop())
       setCameraStream(null)
     }
+    if (isNative) void CameraPreview.stop().catch(() => undefined)
   }
 
   const switchCamera = () => {
     stopCamera()
+    if (isNative) void CameraPreview.flip()
     setFacingMode(prev => prev === 'environment' ? 'user' : 'environment')
   }
 
   const toggleFlash = async () => {
+    if (isNative) {
+      const newFlashMode = flashMode === 'off' ? 'torch' : 'off'
+      await CameraPreview.setFlashMode({ flashMode: newFlashMode })
+      setFlashMode(newFlashMode === 'torch' ? 'on' : 'off')
+      return
+    }
     if (!cameraStream) return
 
     const videoTrack = cameraStream.getVideoTracks()[0]
@@ -125,81 +146,63 @@ export default function CameraScreen({ navigate }: Props) {
     }
   }
 
-  // Native camera capture using Capacitor
+  const finishAnalysis = async (dataUrl: string) => {
+    setCapturedImage(dataUrl)
+    setUploadState('uploading')
+    setGateLabel('Running Gate 1: image quality check...')
+
+    try {
+      let result: PredictResponse
+      try {
+        result = await analyzeImage(dataUrl)
+      } catch (localError) {
+        if (!API_URL) throw localError
+        const blob = await (await fetch(dataUrl)).blob()
+        const formData = new FormData()
+        formData.append('file', blob, 'scan.jpg')
+        const response = await fetch(API_URL, { method: 'POST', body: formData, headers: { 'X-API-Key': API_KEY } })
+        if (!response.ok) throw new Error(`Server error: ${response.status}`)
+        result = await response.json()
+      }
+
+      setGateLabel('Running Gate 2: model inference...')
+      setUploadState('done')
+      setPendingResult(result)
+      await new Promise(resolve => setTimeout(resolve, 300))
+      if (result.status === 'blur_error') navigate('blur-error', result)
+      else if (result.status === 'low_confidence') navigate('uncertainty', result)
+      else setUploadState('location-select')
+    } catch (error) {
+      console.error('Inference error:', error)
+      alert(API_URL ? 'The on-device model and server fallback are unavailable.' : 'The on-device model is unavailable. Add public/models/skin_model.onnx.')
+      setUploadState('idle')
+      setCapturedImage(null)
+    }
+  }
+
+  // Native capture uses the in-app preview rather than handing off to the OS camera.
   const handleNativeCameraCapture = async () => {
     try {
       setPermissionSource('camera')
       setUploadState('permission-requested')
-      
-      const image = await Camera.getPhoto({
-        quality: 90,
-        allowEditing: false,
-        resultType: CameraResultType.DataUrl,
-        source: 'camera',
-        direction: facingMode === 'environment' ? 'rear' : 'front'
-      })
-
-      setCapturedImage(image.dataUrl || null)
-      setUploadState('uploading')
-      setGateLabel('Running Gate 1: blur check…')
-
-      // Convert data URL to blob for API upload
-      const response = await fetch(image.dataUrl!)
-      const blob = await response.blob()
-
-      const formData = new FormData()
-      formData.append("file", blob, 'capture.jpg')
-
-      try {
-        await new Promise(r => setTimeout(r, 700))
-
-        const apiResponse = await fetch(API_URL, {
-          method: "POST",
-          body: formData,
-          headers: {
-            "X-API-Key": API_KEY,
-          },
-        })
-
-        if (!apiResponse.ok) {
-          const errorData = await apiResponse.json().catch(() => ({}))
-          throw new Error(errorData.detail || `Server error: ${apiResponse.status}`)
-        }
-
-        setGateLabel('Running Gate 2: model inference…')
-        const result: PredictResponse = await apiResponse.json()
-
-        setGateLabel('Done')
-        setUploadState('done')
-        setPendingResult(result)
-        await new Promise(r => setTimeout(r, 300))
-
-        if (result.status === 'blur_error') {
-          navigate('blur-error', result)
-        } else if (result.status === 'low_confidence') {
-          navigate('uncertainty', result)
-        } else {
-          setUploadState('location-select')
-        }
-
-      } catch (error) {
-        console.error("API Error:", error)
-        alert("Could not connect to the AI model. Check if Port 8000 is Public.")
-        setUploadState('idle')
-        setCapturedImage(null)
-      }
+      const image = await CameraPreview.capture({ quality: 90 })
+      const dataUrl = image.value.startsWith('data:') ? image.value : `data:image/jpeg;base64,${image.value}`
+      await finishAnalysis(dataUrl)
     } catch (error) {
       console.error('Camera capture error:', error)
+      if (error instanceof Error && error.message.includes('cancel')) {
+        setUploadState('idle')
+        return
+      }
       setPermissionError(error instanceof Error ? error.message : 'Camera access denied')
       setUploadState('permission-denied')
     }
   }
 
   // Capture photo from video stream (web only)
-  const handleCaptureClick = () => {
-    // Use native camera on mobile platforms
+  const handleCaptureClick = async () => {
     if (isNative) {
-      handleNativeCameraCapture()
+      await handleNativeCameraCapture()
       return
     }
 
@@ -222,65 +225,7 @@ export default function CameraScreen({ navigate }: Props) {
       }
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
       
-      // Convert to blob and upload
-      canvas.toBlob(async (blob) => {
-        if (!blob) return
-        
-        // Convert image to base64 for storage
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          setCapturedImage(e.target?.result as string)
-        }
-        reader.readAsDataURL(blob)
-
-        setUploadState('uploading')
-        setGateLabel('Running Gate 1: blur check…')
-
-        const formData = new FormData()
-        formData.append("file", blob, 'capture.jpg')
-
-        try {
-          // Small artificial delay so the user can see your cool UI animation
-          await new Promise(r => setTimeout(r, 700))
-          
-          const response = await fetch(API_URL, {
-            method: "POST",
-            body: formData,
-            headers: {
-              "X-API-Key": API_KEY,
-            },
-          })
-
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}))
-            throw new Error(errorData.detail || `Server error: ${response.status}`)
-          }
-
-          setGateLabel('Running Gate 2: model inference…')
-          const result: PredictResponse = await response.json()
-
-          setGateLabel('Done')
-          setUploadState('done')
-          setPendingResult(result)
-          await new Promise(r => setTimeout(r, 300))
-
-          // Route to the correct screen based on the Dual-Gate logic
-          if (result.status === 'blur_error') {
-            navigate('blur-error', result)
-          } else if (result.status === 'low_confidence') {
-            navigate('uncertainty', result)
-          } else {
-            // For successful results, show location selection first
-            setUploadState('location-select')
-          }
-
-        } catch (error) {
-          console.error("API Error:", error)
-          alert("Could not connect to the AI model. Check if Port 8000 is Public.")
-          setUploadState('idle')
-          setCapturedImage(null)
-        }
-      }, 'image/jpeg', 0.9)
+      await finishAnalysis(canvas.toDataURL('image/jpeg', 0.9))
     }
   }
 
@@ -295,60 +240,11 @@ export default function CameraScreen({ navigate }: Props) {
     const file = event.target.files?.[0]
     if (!file) return
 
-    // Convert image to base64 for storage
     const reader = new FileReader()
     reader.onload = (e) => {
-      setCapturedImage(e.target?.result as string)
+      void finishAnalysis(e.target?.result as string)
     }
     reader.readAsDataURL(file)
-
-    setUploadState('uploading')
-    setGateLabel('Running Gate 1: blur check…')
-
-    const formData = new FormData()
-    formData.append("file", file)
-
-    try {
-      // Small artificial delay so the user can see your cool UI animation
-      await new Promise(r => setTimeout(r, 700))
-
-      const response = await fetch(API_URL, {
-        method: "POST",
-        body: formData,
-        headers: {
-          "X-API-Key": API_KEY,
-        },
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.detail || `Server error: ${response.status}`)
-      }
-
-      setGateLabel('Running Gate 2: model inference…')
-      const result: PredictResponse = await response.json()
-
-      setGateLabel('Done')
-      setUploadState('done')
-      setPendingResult(result)
-      await new Promise(r => setTimeout(r, 300))
-
-      // Route to the correct screen based on the Dual-Gate logic
-      if (result.status === 'blur_error') {
-        navigate('blur-error', result)
-      } else if (result.status === 'low_confidence') {
-        navigate('uncertainty', result)
-      } else {
-        // For successful results, show location selection first
-        setUploadState('location-select')
-      }
-
-    } catch (error) {
-      console.error("API Error:", error)
-      alert("Could not connect to the AI model. Check if Port 8000 is Public.")
-      setUploadState('idle')
-      setCapturedImage(null)
-    }
 
     // Clear the input so you can upload the same file again if needed
     if (fileInputRef.current) fileInputRef.current.value = ''
@@ -367,55 +263,7 @@ export default function CameraScreen({ navigate }: Props) {
         source: 'photos'
       })
 
-      setCapturedImage(image.dataUrl || null)
-      setUploadState('uploading')
-      setGateLabel('Running Gate 1: blur check…')
-
-      // Convert data URL to blob for API upload
-      const response = await fetch(image.dataUrl!)
-      const blob = await response.blob()
-
-      const formData = new FormData()
-      formData.append("file", blob, 'upload.jpg')
-
-      try {
-        await new Promise(r => setTimeout(r, 700))
-
-        const apiResponse = await fetch(API_URL, {
-          method: "POST",
-          body: formData,
-          headers: {
-            "X-API-Key": API_KEY,
-          },
-        })
-
-        if (!apiResponse.ok) {
-          const errorData = await apiResponse.json().catch(() => ({}))
-          throw new Error(errorData.detail || `Server error: ${apiResponse.status}`)
-        }
-
-        setGateLabel('Running Gate 2: model inference…')
-        const result: PredictResponse = await apiResponse.json()
-
-        setGateLabel('Done')
-        setUploadState('done')
-        setPendingResult(result)
-        await new Promise(r => setTimeout(r, 300))
-
-        if (result.status === 'blur_error') {
-          navigate('blur-error', result)
-        } else if (result.status === 'low_confidence') {
-          navigate('uncertainty', result)
-        } else {
-          setUploadState('location-select')
-        }
-
-      } catch (error) {
-        console.error("API Error:", error)
-        alert("Could not connect to the AI model. Check if Port 8000 is Public.")
-        setUploadState('idle')
-        setCapturedImage(null)
-      }
+      await finishAnalysis(image.dataUrl || '')
     } catch (error) {
       console.error('Gallery upload error:', error)
       setPermissionError(error instanceof Error ? error.message : 'Photo library access denied')
@@ -443,7 +291,7 @@ export default function CameraScreen({ navigate }: Props) {
   const cameraReady = isNative ? uploadState === 'idle' : uploadState === 'idle' && cameraStream !== null
 
   return (
-    <div className="flex flex-col h-full font-body" style={{ background: '#0a1220' }}>
+    <div className="flex flex-col h-full font-body" style={{ background: isNative ? 'transparent' : '#0a1220' }}>
       
       {/* Hidden canvas for capturing frames (web only) */}
       {!isNative && <canvas ref={canvasRef} className="hidden" />}
@@ -520,7 +368,7 @@ export default function CameraScreen({ navigate }: Props) {
             <span className="font-mono text-[9px] text-blue-400 mt-0.5 animate-pulse">{gateLabel}</span>
           )}
         </div>
-        {!isNative ? (
+        {(
           <button
             onClick={switchCamera}
             disabled={!cameraReady}
@@ -533,13 +381,14 @@ export default function CameraScreen({ navigate }: Props) {
               <path d="M13 12l2 2m0-2l-2 2" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           </button>
-        ) : (
-          <div style={{ width: 48, height: 48 }} /> // Spacer for layout consistency
         )}
       </div>
 
       {/* Viewfinder */}
       <div className="flex-1 flex items-center justify-center relative overflow-hidden">
+        {/* Native preview is provided behind the WebView by CameraPreview. */}
+        {isNative && <div id="camera-preview" className="absolute inset-0 pointer-events-none" />}
+
         {/* Live camera feed (web only) */}
         {!isNative && cameraReady && (
           <video
@@ -555,7 +404,7 @@ export default function CameraScreen({ navigate }: Props) {
         )}
 
         {/* Fallback background when camera not ready or on native */}
-        {(!cameraReady || isNative) && (
+        {!cameraReady && (
           <div
             className="absolute inset-0"
             style={{ background: 'radial-gradient(ellipse at 40% 50%, #1a2840 0%, #0a1220 70%)' }}
@@ -687,8 +536,8 @@ export default function CameraScreen({ navigate }: Props) {
 
       {/* Controls — all targets ≥ 48×48dp */}
       <div className="flex items-center justify-between px-10 pb-24 pt-2">
-        {/* Flash button (web only) */}
-        {!isNative ? (
+        {/* Flash control */}
+        {(
           <button
             onClick={toggleFlash}
             disabled={!cameraReady}
@@ -706,8 +555,6 @@ export default function CameraScreen({ navigate }: Props) {
               </svg>
             </div>
           </button>
-        ) : (
-          <div style={{ width: 52, height: 52 }} /> // Spacer for layout consistency
         )}
 
         {/* Capture — 76px exceeds 48dp minimum */}

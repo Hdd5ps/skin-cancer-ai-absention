@@ -31,6 +31,9 @@ const config: CapacitorConfig = {
     Camera: {
       permissions: ['camera', 'photos']
     },
+    CameraPreview: {
+      enableOpacity: true
+    },
     Preferences: {
       name: 'dermascan_preferences'
     },

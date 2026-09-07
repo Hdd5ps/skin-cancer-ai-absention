@@ -31,6 +31,7 @@
     "android:install:debug": "pnpm run android:build:debug && cd android && adb install app/build/outputs/apk/debug/app-debug.apk"
   },
   "dependencies": {
+    "@capacitor-community/camera-preview": "^8.0.1",
     "@capacitor/android": "^8.5.0",
     "@capacitor/app": "^8.1.0",
     "@capacitor/camera": "^8.2.2",
@@ -40,6 +41,7 @@
     "@capacitor/ios": "^8.5.0",
     "@capacitor/preferences": "^8.0.1",
     "@capacitor/splash-screen": "^8.0.1",
+    "onnxruntime-web": "^1.29.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

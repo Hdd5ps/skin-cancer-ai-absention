@@ -99,6 +99,8 @@ DermaScan AI is a personal project focused on learning and development in AI-pow
 - **Classes**: Benign Nevus vs Melanoma
 - **Validation AUC**: 0.8884
 - **Calibration ECE**: 0.0730
+- **Offline artifact**: `public/models/skin_model.onnx` for on-device inference
+- **Export instructions**: See [MODEL_EXPORT.md](./MODEL_EXPORT.md)
 
 ## 📱 Features
 
@@ -122,14 +124,15 @@ DermaScan AI is a personal project focused on learning and development in AI-pow
 ### Environment Variables
 Create `.env.development` for local development:
 ```env
-API_URL=http://localhost:8000/predict
+VITE_API_URL=http://localhost:8000/predict
 VITE_ENABLE_HISTORY=true
 VITE_ENABLE_BODY_MAPPING=true
 ```
 
 ### API Configuration
-- Development: `http://localhost:8000/predict`
-- Production: Set via `API_URL` environment variable
+- The app uses the bundled ONNX model on the device by default.
+- Optional fallback: set `VITE_API_URL` to a reachable `/predict` endpoint. On a physical phone, `localhost` means the phone itself; use your development machine's LAN address instead.
+- The offline model must be exported to `public/models/skin_model.onnx`; see [MODEL_EXPORT.md](./MODEL_EXPORT.md).
 
 ## 🧪 Testing
 

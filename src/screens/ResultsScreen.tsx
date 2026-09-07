@@ -84,7 +84,7 @@ export default function ResultsScreen({ navigate, result, imageData }: Props) {
               ? <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               : <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1.5L8.5 7.5H1.5L5 1.5z" stroke="white" strokeWidth="1.2" strokeLinejoin="round"/></svg>
             }
-            Model output: {label}
+            Screening result: {label}
           </div>
           {/* Blur variance OK */}
           <div className="absolute top-3 right-3 px-2 py-1 rounded-lg font-mono text-[9px]" style={{ background: 'rgba(5,150,105,0.85)', color: 'white' }}>
@@ -119,22 +119,12 @@ export default function ResultsScreen({ navigate, result, imageData }: Props) {
         </div>
       </div>
 
-      {/* Model validation metrics */}
+      {/* Plain-language interpretation */}
       <div className="mx-6 mt-3 px-4 py-3 rounded-2xl" style={{ background: 'white', border: '1px solid #e2e8f0' }}>
-        <p className="font-mono text-[9px] tracking-widest uppercase text-ink-400 mb-2">Model Metadata</p>
-        <div className="grid grid-cols-4 gap-2">
-          {[
-            { label: 'Architecture', value: data.model_metadata.architecture },
-            { label: 'Val AUC', value: data.model_metadata.validation_auc.toFixed(4) },
-            { label: 'Calib. ECE', value: data.model_metadata.calibration_ece.toFixed(4) },
-            { label: 'Temperature', value: `T=${data.model_metadata.temperature}` },
-          ].map(({ label, value }) => (
-            <div key={label} className="flex flex-col gap-0.5">
-              <span className="font-mono text-[8px] text-ink-400 leading-none">{label}</span>
-              <span className="font-mono text-[10px] font-medium text-ink-700">{value}</span>
-            </div>
-          ))}
-        </div>
+        <p className="font-mono text-[9px] tracking-widest uppercase text-ink-400 mb-2">What this means</p>
+        <p className="text-[12px] leading-snug text-ink-700">
+          This screening model can miss concerning skin changes. A result that looks benign does not rule out skin cancer, so have any changing, bleeding, painful, or persistent spot checked by a qualified dermatologist.
+        </p>
       </div>
 
       {/* Disclaimer */}

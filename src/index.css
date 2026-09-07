@@ -51,6 +51,14 @@ html, body, #root {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.native-camera-preview,
+.native-camera-preview body,
+.native-camera-preview #root,
+.native-camera-preview #root > div,
+.native-camera-preview #root > div > div {
+  background: transparent !important;
+}
+
 ::-webkit-scrollbar { width: 0; background: transparent; }
 
 .font-display { font-family: var(--font-display); }

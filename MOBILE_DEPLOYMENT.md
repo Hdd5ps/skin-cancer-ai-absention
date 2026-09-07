@@ -112,9 +112,10 @@ This document outlines the strategy for deploying DermaScan AI as a mobile appli
    - Add authentication (if needed)
 
 3. **ML Model Deployment**
-   - Optimize model for mobile/cloud inference
-   - Consider ONNX runtime for faster inference
-   - Set up model versioning
+   - Export the calibrated checkpoint to `public/models/skin_model.onnx`
+   - Run inference on-device with ONNX Runtime Web
+   - Follow [MODEL_EXPORT.md](./MODEL_EXPORT.md) for export and preprocessing requirements
+   - Set up model versioning for future artifacts
 
 ### Phase 3: App Store Preparation (2-3 weeks)
 
