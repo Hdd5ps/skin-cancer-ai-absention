@@ -10,6 +10,8 @@ from torchvision import models
 
 
 BASE_DIR = Path(__file__).resolve().parent
+# This is the calibrated project checkpoint, not a generic torchvision weight
+# file. The matching ONNX artifact is generated under public/models/.
 CHECKPOINT_PATH = BASE_DIR / "models" / "mobilenetv2_calibrated.pth"
 OUTPUT_PATH = BASE_DIR.parent / "public" / "models" / "skin_model.onnx"
 TEMPERATURE = 0.7540
@@ -61,6 +63,7 @@ def _extract_state_dict(payload: Any) -> dict[str, Any]:
 
 
 def _load_model() -> ModelWithTemperature:
+    """Load the calibrated project checkpoint with an exact architecture match."""
     if not CHECKPOINT_PATH.exists():
         raise FileNotFoundError(f"Checkpoint not found: {CHECKPOINT_PATH}")
 
@@ -79,6 +82,7 @@ def _load_model() -> ModelWithTemperature:
 
 
 def main() -> None:
+    """Export and numerically validate the offline inference model."""
     model = _load_model()
     export_model = CalibratedProbability(model).eval()
     dummy_input = torch.randn(1, 3, 224, 224)
