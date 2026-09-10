@@ -41,7 +41,7 @@ export default function ResultsScreen({ navigate, result, imageData }: Props) {
       : 'The result looks lower risk, but this is not an all-clear and does not rule out skin cancer. Have any changing, bleeding, painful, or persistent spot checked.'
   const style = riskBand === 'Elevated concern'
     ? { color: '#b42318', bg: '#fff1f0', border: '#fecaca' }
-    : riskBand === 'Needs review'
+    : riskBand === 'Borderline: monitor closely'
       ? { color: '#b45309', bg: '#fffbeb', border: '#fcd34d' }
       : { color: '#1d56a8', bg: '#eff6ff', border: '#bfdbfe' }
   return (
