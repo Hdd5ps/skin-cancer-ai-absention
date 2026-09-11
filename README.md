@@ -30,7 +30,7 @@ DermaScan AI is a personal project focused on learning and development in AI-pow
 - ✅ Dual-gated analysis pipeline (blur detection + ML inference)
 - ✅ Scan history and tracking
 - ✅ Body location mapping
-- ✅ Confidence-based results
+- ✅ Risk-banded results with confidence gating
 - ✅ Mobile-responsive design
 - 🔄 Cloud deployment (in progress)
 - 🔄 App store submission (planned)
@@ -96,9 +96,13 @@ DermaScan AI is a personal project focused on learning and development in AI-pow
 
 ### AI Model
 - **Architecture**: MobileNetV2 with temperature scaling
-- **Classes**: Benign Nevus vs Melanoma
-- **Validation AUC**: 0.8884
-- **Calibration ECE**: 0.0730
+- **Classes**: Benign Nevus vs Melanoma (Melanoma is the positive class)
+- **Validation AUC**: 0.9420
+- **Calibration ECE**: 0.0496
+- **Temperature**: 0.7540
+- **Operating point**: `P(Melanoma) >= 0.15`
+- **Risk bands**: Elevated concern (`>= 0.40`), Borderline: monitor closely
+   (`0.15-0.39`), and Lower concern (`< 0.15`)
 - **Offline artifact**: `public/models/skin_model.onnx` for on-device inference
 - **Export instructions**: See [MODEL_EXPORT.md](./MODEL_EXPORT.md)
 
@@ -107,7 +111,7 @@ DermaScan AI is a personal project focused on learning and development in AI-pow
 ### Core Functionality
 - ✅ AI-powered skin lesion analysis
 - ✅ Image quality validation (blur detection)
-- ✅ Confidence-based result filtering
+- ✅ Risk-banded result filtering with confidence gating
 - ✅ ABCDE feature analysis
 - ✅ Model validation metrics display
 - ✅ Medical disclaimers and safety gates

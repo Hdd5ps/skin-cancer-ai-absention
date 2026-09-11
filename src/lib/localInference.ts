@@ -69,7 +69,7 @@ export async function analyzeImage(dataUrl: string): Promise<PredictResponse> {
     architecture: 'MobileNetV2',
     temperature: LOCAL_TEMPERATURE,
     validation_auc: 0.9420,
-    calibration_ece: 0.073,
+    calibration_ece: 0.0496,
     blur_threshold: LOCAL_BLUR_THRESHOLD,
     confidence_threshold: LOCAL_CONFIDENCE_THRESHOLD,
     malignant_threshold: LOCAL_MALIGNANT_THRESHOLD,

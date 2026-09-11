@@ -101,9 +101,9 @@ TEMPERATURE: float = 0.7540
 LABEL_MAP = {0: "Benign Nevus", 1: "Melanoma"}
 ICD_MAP   = {0: "D22.9",        1: "C43.9"}
 
-# TODO: Set these per deployed checkpoint from the held-out evaluation report.
+# Metrics for the merged three-dataset checkpoint and held-out evaluation.
 MODEL_AUC: float = float(os.getenv("MODEL_AUC", "0.9420"))
-MODEL_ECE: float = float(os.getenv("MODEL_ECE", "0.0730"))
+MODEL_ECE: float = float(os.getenv("MODEL_ECE", "0.0496"))
 
 MAX_IMAGE_BYTES: int = 10 * 1024 * 1024  # 10 MB
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
