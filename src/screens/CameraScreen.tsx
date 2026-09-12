@@ -342,6 +342,7 @@ export default function CameraScreen({ navigate }: Props) {
               Try Again
             </button>
             <button
+              data-testid="navigate-home"
               onClick={() => navigate('home')}
               className="block mx-auto mt-3 px-6 py-3 rounded-xl font-medium text-white text-[14px]"
               style={{ background: 'rgba(255,255,255,0.1)' }}

@@ -78,7 +78,7 @@ The project includes both a React frontend and Python FastAPI backend:
 - **Production**: Deploy FastAPI app to cloud provider (see CLOUD_DEPLOYMENT.md)
 
 ### Mobile Build Commands
-- `pnpm run cap:build` - Build and sync Capacitor
+- `pnpm run cap:build` - Build the web assets for Capacitor
 - `pnpm run android:build:debug` - Build debug APK
 - `pnpm run android:build:release` - Build release APK
 - `pnpm run android:build:bundle` - Build release AAB for Play Store

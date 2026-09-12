@@ -67,6 +67,7 @@ export default function ScanHistoryScreen({ navigate }: Props) {
       <div className="flex flex-col h-full font-body" style={{ background: '#f8fafc' }}>
         <div className="flex items-center justify-between px-6 py-3">
           <button
+            data-testid="navigate-home"
             onClick={() => navigate('home')}
             className="rounded-full flex items-center justify-center"
             style={{ width: 48, height: 48, minWidth: 48, minHeight: 48, background: '#f1f5f9' }}

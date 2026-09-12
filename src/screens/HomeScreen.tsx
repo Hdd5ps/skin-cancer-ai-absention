@@ -110,6 +110,7 @@ export default function HomeScreen({ navigate }: Props) {
       {/* CTA */}
       <div className="px-7 pb-20 flex flex-col gap-3">
         <button
+          data-testid="start-scan"
           onClick={() => navigate('camera')}
           className="w-full py-4 rounded-2xl font-display font-bold text-white text-[17px] transition-all active:scale-[0.98]"
           style={{
@@ -121,6 +122,7 @@ export default function HomeScreen({ navigate }: Props) {
           Scan Lesion
         </button>
         <button
+          data-testid="scan-history"
           onClick={() => navigate('history')}
           className="w-full py-3 rounded-2xl font-display font-semibold text-ink-600 text-[15px] transition-all active:scale-[0.98]"
           style={{ background: '#f1f5f9', border: '1px solid #e2e8f0' }}
