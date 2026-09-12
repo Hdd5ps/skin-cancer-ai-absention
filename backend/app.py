@@ -96,7 +96,7 @@ RATE_LIMIT_REQUESTS = int(os.getenv("RATE_LIMIT_REQUESTS", "50"))  # Stricter de
 RATE_LIMIT_PERIOD = int(os.getenv("RATE_LIMIT_PERIOD", "3600"))
 
 # Temperature Scaling factor determined post-training via held-out validation.
-TEMPERATURE: float = 0.7540
+TEMPERATURE: float = 0.7928
 
 LABEL_MAP = {0: "Benign Nevus", 1: "Melanoma"}
 ICD_MAP   = {0: "D22.9",        1: "C43.9"}

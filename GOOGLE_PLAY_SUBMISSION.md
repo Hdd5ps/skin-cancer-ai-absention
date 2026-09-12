@@ -166,9 +166,9 @@ IMPORTANT MEDICAL DISCLAIMER:
 This application is a screening tool only and is not intended as a diagnostic device. The results provided are for informational purposes only and should not be used as a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.
 
 TECHNICAL DETAILS:
-• Model: MobileNetV2 with temperature scaling
-• Validation AUC: 0.8884
-• Calibration ECE: 0.0730
+• Model: MobileNetV2 with temperature scaling (T=0.7928)
+• Validation AUC: 0.9420
+• Calibration ECE: 0.0496
 • Privacy: Images processed locally when possible
 • Storage: Encrypted local storage for scan history
 

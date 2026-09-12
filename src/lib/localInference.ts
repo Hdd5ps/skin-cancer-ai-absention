@@ -5,7 +5,7 @@ const MODEL_URL = '/models/skin_model.onnx'
 const IMAGE_SIZE = 224
 export const LOCAL_BLUR_THRESHOLD = 100
 export const LOCAL_CONFIDENCE_THRESHOLD = 0.8
-export const LOCAL_TEMPERATURE = 0.754
+export const LOCAL_TEMPERATURE = 0.7928
 export const LOCAL_MALIGNANT_THRESHOLD = 0.15
 
 let sessionPromise: Promise<ort.InferenceSession> | null = null

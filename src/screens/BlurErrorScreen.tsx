@@ -114,8 +114,8 @@ export default function BlurErrorScreen({ navigate, result }: Props) {
 
       {/* Model metadata strip */}
       <div className="mx-6 mt-3 px-3 py-2 rounded-xl flex items-center justify-between" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-        <span className="font-mono text-[9px] text-ink-400 tracking-wider">MobileNetV2 · T={result?.model_metadata.temperature ?? 1.1672}</span>
-        <span className="font-mono text-[9px] text-ink-400">AUC {result?.model_metadata.validation_auc ?? 0.8884} · ECE {result?.model_metadata.calibration_ece ?? 0.0730}</span>
+        <span className="font-mono text-[9px] text-ink-400 tracking-wider">MobileNetV2 · T={result?.model_metadata.temperature ?? 0.7928}</span>
+        <span className="font-mono text-[9px] text-ink-400">AUC {result?.model_metadata.validation_auc ?? 0.9420} · ECE {result?.model_metadata.calibration_ece ?? 0.0496}</span>
       </div>
 
       <div className="flex-1"/>

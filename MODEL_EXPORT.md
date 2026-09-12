@@ -11,6 +11,11 @@ The script reads `backend/models/mobilenetv2_calibrated.pth` and writes
 `public/models/skin_model.onnx`. It verifies the exported model against PyTorch
 on the same random input before succeeding.
 
+The shipped checkpoint contains temperature `0.7928`. The exporter reads this
+parameter from the checkpoint and bakes it into the ONNX graph; source metadata
+reports the same value for transparency. The current reported validation
+metrics are AUC `0.9420` and calibration ECE `0.0496`.
+
 Preprocess every image as `224x224` RGB input with ImageNet normalization:
 mean `[0.485, 0.456, 0.406]` and standard deviation `[0.229, 0.224, 0.225]`.
 The ONNX output is the calibrated `P(Melanoma)`, where Melanoma is the positive

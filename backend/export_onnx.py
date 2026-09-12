@@ -14,7 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent
 # file. The matching ONNX artifact is generated under public/models/.
 CHECKPOINT_PATH = BASE_DIR / "models" / "mobilenetv2_calibrated.pth"
 OUTPUT_PATH = BASE_DIR.parent / "public" / "models" / "skin_model.onnx"
-TEMPERATURE = 0.7540
+TEMPERATURE = 0.7928
 
 
 class ModelWithTemperature(nn.Module):

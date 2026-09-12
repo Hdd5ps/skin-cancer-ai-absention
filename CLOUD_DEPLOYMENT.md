@@ -22,7 +22,7 @@ The durable free-tier approach is to remove the dependency that makes the backen
 The conversion must preserve the existing inference behavior:
 
 - Resize input images to `224x224` and apply ImageNet normalization.
-- Apply temperature scaling as `logits / 1.1672`, then apply sigmoid as currently implemented.
+- Apply temperature scaling as `logits / 0.7928`, then apply sigmoid as currently implemented.
 - Keep the Laplacian-variance blur gate before model inference.
 
 Until the ONNX migration is complete, use the CPU-only PyTorch wheel on Render or Railway and accept that 512 MB remains tight and cold starts occur. ONNX is the recommended long-term answer for both strategies because it removes dependence on expiring student credits and reduces hosting memory pressure.

@@ -68,9 +68,9 @@ If you think you may have a medical emergency, call your doctor or emergency ser
 - **Limitations**: Clearly state model limitations and uncertainties
 
 ### Current Model Performance
-- **Architecture**: MobileNetV2 with temperature scaling
-- **Validation AUC**: 0.8884
-- **Calibration ECE**: 0.0730
+- **Architecture**: MobileNetV2 with temperature scaling (T=0.7928)
+- **Validation AUC**: 0.9420
+- **Calibration ECE**: 0.0496
 - **Training Dataset**: Clinical skin lesion images
 - **Limitations**: Not validated on all skin types and conditions
 
@@ -101,8 +101,8 @@ If you think you may have a medical emergency, call your doctor or emergency ser
 ### Performance Metrics
 - **Sensitivity**: Ability to correctly identify malignant lesions
 - **Specificity**: Ability to correctly identify benign lesions
-- **AUC**: Area under ROC curve (0.8884)
-- **Calibration**: Model calibration quality (ECE: 0.0730)
+- **AUC**: Area under ROC curve (0.9420)
+- **Calibration**: Model calibration quality (ECE: 0.0496)
 
 ### Limitations
 - **Population**: Model trained on specific population

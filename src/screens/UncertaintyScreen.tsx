@@ -92,7 +92,7 @@ export default function UncertaintyScreen({ navigate, result }: Props) {
           Why no prediction?
         </h3>
         <p className="text-[12px] text-ink-600 leading-relaxed mb-3">
-          The calibrated MobileNetV2 (T = {result?.model_metadata.temperature ?? 1.1672}) scored below the display threshold. Showing a low-confidence prediction would be clinically misleading.
+          The calibrated MobileNetV2 (T = {result?.model_metadata.temperature ?? 0.7928}) scored below the display threshold. Showing a low-confidence prediction would be clinically misleading.
         </p>
         <div className="flex items-center gap-3 mb-1">
           <div className="flex-1 h-2.5 rounded-full" style={{ background: '#e2e8f0', position: 'relative' }}>

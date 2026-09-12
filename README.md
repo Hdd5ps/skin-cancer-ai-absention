@@ -99,7 +99,7 @@ DermaScan AI is a personal project focused on learning and development in AI-pow
 - **Classes**: Benign Nevus vs Melanoma (Melanoma is the positive class)
 - **Validation AUC**: 0.9420
 - **Calibration ECE**: 0.0496
-- **Temperature**: 0.7540
+- **Temperature**: 0.7928
 - **Operating point**: `P(Melanoma) >= 0.15`
 - **Risk bands**: Elevated concern (`>= 0.40`), Borderline: monitor closely
    (`0.15-0.39`), and Lower concern (`< 0.15`)

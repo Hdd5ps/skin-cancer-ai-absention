@@ -218,7 +218,7 @@ class TestSuccessPath:
             resp = _upload(data)
         meta = resp.json()["model_metadata"]
         assert meta["validation_auc"] == pytest.approx(0.9420, rel=1e-3)
-        assert meta["calibration_ece"] == pytest.approx(0.0730, rel=1e-2)
+        assert meta["calibration_ece"] == pytest.approx(0.0496, rel=1e-2)
         assert meta["temperature"] == pytest.approx(TEMPERATURE, rel=1e-4)
 
 
@@ -236,8 +236,8 @@ class TestTemperatureScaling:
         assert scaled_prob > raw_prob, "Temperature scaling should sharpen probabilities"
 
     def test_temperature_value_is_correct(self):
-        """T must be exactly 0.7540 per the calibrated checkpoint."""
-        assert TEMPERATURE == pytest.approx(0.7540, rel=1e-4)
+        """T must match the calibrated checkpoint."""
+        assert TEMPERATURE == pytest.approx(0.7928, rel=1e-4)
 
     def test_temperature_scaling_symmetric(self):
         """Scaling must be symmetric: T(logit) and T(-logit) probabilities sum to ~1."""
