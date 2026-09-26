@@ -71,8 +71,8 @@ If you think you may have a medical emergency, call your doctor or emergency ser
 - **Architecture**: MobileNetV2 with temperature scaling (T=0.7928)
 - **Validation AUC**: 0.9420
 - **Calibration ECE**: 0.0496
-- **Training Dataset**: Clinical skin lesion images
-- **Limitations**: Not validated on all skin types and conditions
+- **Training Dataset**: Primarily dermoscopic skin lesion images, including ISIC imagery
+- **Limitations**: Not validated on casual smartphone photographs; differences in image modality may reduce sensitivity. The model is not a substitute for professional assessment.
 
 ## Risk Management
 
@@ -107,6 +107,7 @@ If you think you may have a medical emergency, call your doctor or emergency ser
 ### Limitations
 - **Population**: Model trained on specific population
 - **Conditions**: Validated under specific conditions
+- **Image Modality**: Primarily trained on dermoscopic imagery; performance on casual smartphone photographs is unknown and may be lower. Future work should evaluate and fine-tune with smartphone-image datasets such as PAD-UFES-20, then report performance on an independent held-out cohort.
 - **Generalization**: May not generalize to all populations
 - **Updates**: Model may require updates with new data
 

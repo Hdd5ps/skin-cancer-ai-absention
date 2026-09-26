@@ -6,6 +6,7 @@ import UncertaintyScreen from './screens/UncertaintyScreen'
 import ResultsScreen from './screens/ResultsScreen'
 import ScanHistoryScreen from './screens/ScanHistoryScreen'
 import { AnalyticsService, AnalyticsEvents } from './lib/analytics'
+import { warmLocalInference } from './lib/localInference'
 
 export type Screen = 'home' | 'camera' | 'blur-error' | 'uncertainty' | 'results' | 'history'
 
@@ -39,6 +40,10 @@ export default function App() {
     const screenName = screen.replace('-', '_')
     AnalyticsService.logScreenView(screenName)
   }, [screen])
+
+  useEffect(() => {
+    void warmLocalInference().catch(() => undefined)
+  }, [])
 
   const navigate = (s: Screen, result?: PredictResponse, imageData?: string) => {
     setApiResult(result ?? null)

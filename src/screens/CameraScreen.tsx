@@ -7,6 +7,7 @@ import type { BodyLocation, ScanRecord } from '../types/scanHistory'
 import { saveScan } from '../types/scanHistory'
 import BodyLocationSelector from '../components/BodyLocationSelector'
 import { analyzeImage } from '../lib/localInference'
+import { getCameraCropRectangle } from '../lib/cameraCrop'
 
 interface Props { navigate: (s: Screen, result?: PredictResponse, imageData?: string) => void }
 
@@ -26,10 +27,14 @@ export default function CameraScreen({ navigate }: Props) {
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment')
   const [permissionError, setPermissionError] = useState<string | null>(null)
   const [flashMode, setFlashMode] = useState<'off' | 'on'>('off')
+  const [frameEnabled, setFrameEnabled] = useState(true)
+  const [frameSize, setFrameSize] = useState(240)
   const [isNative] = useState(() => Capacitor.isNativePlatform())
   const [permissionSource, setPermissionSource] = useState<'camera' | 'gallery'>('camera')
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const viewfinderRef = useRef<HTMLDivElement>(null)
+  const frameRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -180,13 +185,45 @@ export default function CameraScreen({ navigate }: Props) {
     }
   }
 
+  const captureCameraImage = (source: CanvasImageSource, sourceWidth: number, sourceHeight: number, mirror = false) => {
+    const canvas = canvasRef.current
+    const previewBounds = viewfinderRef.current?.getBoundingClientRect()
+    if (!canvas || !previewBounds) throw new Error('Camera capture is unavailable')
+
+    const frameBounds = frameEnabled ? frameRef.current?.getBoundingClientRect() ?? null : null
+    const crop = getCameraCropRectangle(sourceWidth, sourceHeight, previewBounds, frameBounds)
+    canvas.width = Math.max(1, Math.round(crop.width))
+    canvas.height = Math.max(1, Math.round(crop.height))
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('Camera capture is unavailable')
+
+    if (mirror) {
+      context.translate(canvas.width, 0)
+      context.scale(-1, 1)
+    }
+    context.drawImage(source, crop.x, crop.y, crop.width, crop.height, 0, 0, canvas.width, canvas.height)
+    return canvas.toDataURL('image/jpeg', 0.9)
+  }
+
   // Native capture uses the in-app preview rather than handing off to the OS camera.
   const handleNativeCameraCapture = async () => {
     try {
       setPermissionSource('camera')
       setUploadState('permission-requested')
       const image = await CameraPreview.capture({ quality: 90 })
-      const dataUrl = image.value.startsWith('data:') ? image.value : `data:image/jpeg;base64,${image.value}`
+      const capturedDataUrl = image.value.startsWith('data:') ? image.value : `data:image/jpeg;base64,${image.value}`
+      if (!frameEnabled) {
+        await finishAnalysis(capturedDataUrl)
+        return
+      }
+
+      const capturedImage = new Image()
+      await new Promise<void>((resolve, reject) => {
+        capturedImage.onload = () => resolve()
+        capturedImage.onerror = () => reject(new Error('The camera image could not be decoded'))
+        capturedImage.src = capturedDataUrl
+      })
+      const dataUrl = captureCameraImage(capturedImage, capturedImage.naturalWidth, capturedImage.naturalHeight)
       await finishAnalysis(dataUrl)
     } catch (error) {
       console.error('Camera capture error:', error)
@@ -211,22 +248,8 @@ export default function CameraScreen({ navigate }: Props) {
     const video = videoRef.current
     const canvas = canvasRef.current
     
-    // Set canvas dimensions to match video
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    
-    // Draw current video frame to canvas
-    const ctx = canvas.getContext('2d')
-    if (ctx) {
-      // Flip horizontally if using front camera
-      if (facingMode === 'user') {
-        ctx.translate(canvas.width, 0)
-        ctx.scale(-1, 1)
-      }
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-      
-      await finishAnalysis(canvas.toDataURL('image/jpeg', 0.9))
-    }
+    const dataUrl = captureCameraImage(video, video.videoWidth, video.videoHeight, facingMode === 'user')
+    await finishAnalysis(dataUrl)
   }
 
   // Handle file upload from gallery
@@ -294,7 +317,7 @@ export default function CameraScreen({ navigate }: Props) {
     <div className="flex flex-col h-full font-body" style={{ background: isNative ? 'transparent' : '#0a1220' }}>
       
       {/* Hidden canvas for capturing frames (web only) */}
-      {!isNative && <canvas ref={canvasRef} className="hidden" />}
+      <canvas ref={canvasRef} className="hidden" />
       
       {/* Hidden file input for gallery uploads (web only) */}
       {!isNative && (
@@ -386,7 +409,7 @@ export default function CameraScreen({ navigate }: Props) {
       </div>
 
       {/* Viewfinder */}
-      <div className="flex-1 flex items-center justify-center relative overflow-hidden">
+      <div ref={viewfinderRef} className="flex-1 flex items-center justify-center relative overflow-hidden">
         {/* Native preview is provided behind the WebView by CameraPreview. */}
         {isNative && <div id="camera-preview" className="absolute inset-0 pointer-events-none" />}
 
@@ -425,8 +448,8 @@ export default function CameraScreen({ navigate }: Props) {
           </div>
         )}
 
-        {/* Targeting overlay (240×240 = well above 48dp minimum) */}
-        <div className="relative z-10" style={{ width: 240, height: 240 }}>
+        {/* The visible frame matches the camera crop; gallery images are not cropped. */}
+        {frameEnabled && <div ref={frameRef} className="relative z-10" style={{ width: frameSize, height: frameSize }}>
           {[
             { top: 0, left: 0 }, { top: 0, right: 0, transform: 'rotate(90deg)' },
             { bottom: 0, right: 0, transform: 'rotate(180deg)' }, { bottom: 0, left: 0, transform: 'rotate(270deg)' },
@@ -455,8 +478,8 @@ export default function CameraScreen({ navigate }: Props) {
               }}
             />
           )}
-          <div className="absolute inset-0" style={{ boxShadow: '0 0 0 200px rgba(10,18,32,0.65)' }} />
-        </div>
+          <div className="absolute inset-0" style={{ boxShadow: `0 0 0 ${Math.round(frameSize * 0.83)}px rgba(10,18,32,0.65)` }} />
+        </div>}
 
         {/* Grid */}
         <svg className="absolute inset-0 pointer-events-none" width="100%" height="100%" viewBox="0 0 390 520" preserveAspectRatio="none" style={{ opacity: 0.07 }}>
@@ -476,9 +499,40 @@ export default function CameraScreen({ navigate }: Props) {
             <path d="M8 5v.5M8 7.5v4" stroke="#6ba3f0" strokeWidth="1.3" strokeLinecap="round"/>
           </svg>
           <span className="text-[12px] font-medium" style={{ color: 'rgba(255,255,255,0.8)' }}>
-            {isNative ? 'Tap capture to use camera or gallery to upload' : (cameraReady ? 'Position lesion within the frame or tap gallery to upload' : 'Allow camera access or tap gallery to upload')}
+            {frameEnabled ? 'Position lesion in the square; only this area is assessed' : 'The full camera view is assessed'}
           </span>
         </div>
+      </div>
+
+      <div className="flex items-center justify-center gap-3 px-6 pb-2">
+        <button
+          type="button"
+          aria-pressed={frameEnabled}
+          onClick={() => setFrameEnabled((enabled) => !enabled)}
+          className="flex h-11 items-center gap-2 rounded-full px-3 text-xs font-semibold text-white"
+          style={{ background: frameEnabled ? 'rgba(59,125,232,0.35)' : 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <rect x="2" y="2" width="12" height="12" rx="1" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 2" />
+          </svg>
+          Frame {frameEnabled ? 'on' : 'off'}
+        </button>
+        {frameEnabled && (
+          <label className="flex h-11 items-center gap-2 text-[11px] font-medium text-white/80">
+            <span className="sr-only">Framing area size</span>
+            <input
+              type="range"
+              min="160"
+              max="320"
+              step="16"
+              value={frameSize}
+              onChange={(event) => setFrameSize(Number(event.target.value))}
+              aria-label="Framing area size"
+              className="w-28 accent-blue-400"
+            />
+            <span className="w-10 text-right tabular-nums">{frameSize}px</span>
+          </label>
+        )}
       </div>
 
       {/* Pipeline badge */}
