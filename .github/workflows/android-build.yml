@@ -31,6 +31,11 @@ jobs:
       
     - name: Build frontend
       run: pnpm build
+
+    - name: Verify model bundled in dist
+      run: |
+        ls -lh dist/models/skin_model.onnx
+        head -c 4 dist/models/skin_model.onnx | od -An -tx1
       
     - name: Setup Java
       uses: actions/setup-java@v5
@@ -63,6 +68,10 @@ jobs:
       run: |
         cd android
         ./gradlew assembleDebug --no-daemon
+
+    - name: List Gradle build outputs
+      run: |
+        find android/app/build/outputs -type f \( -name "*.apk" -o -name "*.aab" \) -exec ls -lh {} \; || echo "NO OUTPUTS FOUND"
         
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
@@ -70,7 +79,7 @@ jobs:
         name: dermascan-debug-apk
         path: android/app/build/outputs/apk/debug/app-debug.apk
         retention-days: 30
-        if-no-files-found: warn
+        if-no-files-found: error
         
     - name: Build Release APK
       if: github.ref == 'refs/heads/main'
@@ -85,7 +94,7 @@ jobs:
         name: dermascan-release-apk
         path: android/app/build/outputs/apk/release/app-release.apk
         retention-days: 90
-        if-no-files-found: warn
+        if-no-files-found: error
         
     - name: Build Release AAB
       if: github.ref == 'refs/heads/main'
@@ -100,4 +109,4 @@ jobs:
         name: dermascan-release-aab
         path: android/app/build/outputs/bundle/release/app-release.aab
         retention-days: 90
-        if-no-files-found: warn
+        if-no-files-found: error
